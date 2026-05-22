@@ -1166,3 +1166,9 @@ async function deleteSelectedProfile() {
   await delProfile(name);
   await populateProfileSelect();
 }
+
+async function shutdownApp() {
+  if (!confirm('確定要關閉 CommandWebGUI 應用程式？')) return;
+  await fetch('/api/shutdown', { method: 'POST' }).catch(() => {});
+  document.body.innerHTML = '<div style="display:flex;height:100vh;align-items:center;justify-content:center;font-family:monospace;color:#94a3b8;">CommandWebGUI 已關閉，可以關閉此分頁。</div>';
+}

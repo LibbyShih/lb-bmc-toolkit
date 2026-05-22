@@ -1,5 +1,6 @@
 import sys
 import os
+import signal
 import sqlite3
 import tempfile
 import time
@@ -20,6 +21,13 @@ try:
 except ImportError:
     HAS_SERIAL = False
 
+try:
+    import pystray
+    from PIL import Image, ImageDraw
+    HAS_TRAY = True
+except ImportError:
+    HAS_TRAY = False
+
 # ── PyInstaller frozen path ──────────────────────────────────────
 if getattr(sys, 'frozen', False):
     base_path = Path(sys.executable).parent
@@ -30,7 +38,9 @@ else:
     template_folder = str(base_path / 'templates')
     static_folder   = str(base_path / 'static')
 
-DB_PATH = base_path / 'profiles.db'
+DB_PATH   = base_path / 'profiles.db'
+LOCK_FILE = base_path / 'commandwebgui.lock'
+_tray_icon = None
 
 # Optional Basic Auth — set WEBGUI_USER + WEBGUI_PASS env vars to enable
 _AUTH_USER = os.environ.get('WEBGUI_USER', '')
@@ -932,17 +942,126 @@ def pool_status():
 
 
 # ═══════════════════════════════════════════════════════════════
+#  Routes — Shutdown
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/shutdown', methods=['POST'])
+def shutdown():
+    def _exit():
+        time.sleep(0.3)
+        if _tray_icon:
+            try: _tray_icon.stop()
+            except Exception: pass
+        _remove_lock()
+        os._exit(0)
+    threading.Thread(target=_exit, daemon=True).start()
+    return jsonify({'ok': True})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  Single Instance + System Tray
+# ═══════════════════════════════════════════════════════════════
+
+def _check_single_instance() -> bool:
+    """Return True if we are the only instance; False if another is already running."""
+    if LOCK_FILE.exists():
+        try:
+            parts = LOCK_FILE.read_text().strip().split('\n')
+            existing_port = int(parts[1]) if len(parts) > 1 else None
+            if existing_port:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(1)
+                    if s.connect_ex(('localhost', existing_port)) == 0:
+                        webbrowser.open_new(f'http://localhost:{existing_port}')
+                        return False
+        except Exception:
+            pass
+    return True
+
+
+def _write_lock(port: int):
+    LOCK_FILE.write_text(f'{os.getpid()}\n{port}')
+
+
+def _remove_lock():
+    try: LOCK_FILE.unlink(missing_ok=True)
+    except Exception: pass
+
+
+def _make_tray_image():
+    size = 64
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([2, 2, size - 2, size - 2], fill=(11, 25, 40))
+    # [ symbol
+    draw.line([(16, 16), (16, 48)], fill=(79, 195, 247), width=5)
+    draw.line([(16, 16), (26, 16)], fill=(79, 195, 247), width=5)
+    draw.line([(16, 48), (26, 48)], fill=(79, 195, 247), width=5)
+    # > arrow
+    draw.polygon([(34, 20), (34, 44), (52, 32)], fill=(79, 195, 247))
+    return img
+
+
+def _run_tray(port: int):
+    global _tray_icon
+    if not HAS_TRAY:
+        return
+
+    def on_open(icon, item):
+        webbrowser.open_new(f'http://localhost:{port}')
+
+    def on_exit(icon, item):
+        icon.stop()
+        _remove_lock()
+        os._exit(0)
+
+    img = _make_tray_image()
+    menu = pystray.Menu(
+        pystray.MenuItem('開啟 CommandWebGUI', on_open, default=True),
+        pystray.MenuItem('結束', on_exit),
+    )
+    _tray_icon = pystray.Icon('CommandWebGUI', img, f'CommandWebGUI  http://localhost:{port}', menu)
+    _tray_icon.run()  # blocks until icon.stop()
+
+
+# ═══════════════════════════════════════════════════════════════
 #  Entry Point
 # ═══════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
+    if not _check_single_instance():
+        sys.exit(0)
+
     available_port = get_free_port()
-    t_browser = Timer(1.5, open_browser, args=[available_port])
-    t_browser.daemon = True
-    t_browser.start()
+    _write_lock(available_port)
+
+    def _shutdown_handler(sig, frame):
+        if _tray_icon:
+            try: _tray_icon.stop()
+            except Exception: pass
+        _remove_lock()
+        os._exit(0)
+
+    signal.signal(signal.SIGINT,  _shutdown_handler)
+    signal.signal(signal.SIGTERM, _shutdown_handler)
+
     print(f'[CommandWebGUI] http://localhost:{available_port}')
     if _AUTH_USER:
         print(f'[CommandWebGUI] Basic Auth enabled (user: {_AUTH_USER})')
     if not HAS_SERIAL:
         print('[CommandWebGUI] pyserial not found — COM port features disabled (pip install pyserial)')
-    app.run(host='0.0.0.0', port=available_port, debug=False)
+    if not HAS_TRAY:
+        print('[CommandWebGUI] pystray/Pillow not found — system tray disabled (pip install pystray pillow)')
+
+    if HAS_TRAY:
+        flask_thread = threading.Thread(
+            target=lambda: app.run(host='0.0.0.0', port=available_port, debug=False),
+            daemon=True
+        )
+        flask_thread.start()
+        Timer(1.5, open_browser, args=[available_port]).start()
+        _run_tray(available_port)   # blocks in main thread; exits when tray icon stops
+    else:
+        Timer(1.5, open_browser, args=[available_port]).start()
+        app.run(host='0.0.0.0', port=available_port, debug=False)
+        _remove_lock()

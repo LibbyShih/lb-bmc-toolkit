@@ -26,6 +26,9 @@
 
 ![服務管理](docs/screenshot_services.png)
 
+### 啟動服務工具圖示
+![工具圖示](docs/screenshot_icon.png)
+
 ---
 
 ## 功能
@@ -42,7 +45,9 @@
 | **ANSI 顏色渲染** | BMC 指令輸出的顏色在瀏覽器中正確顯示 |
 | **超長輸出摺疊** | 超過 120 行自動摺疊，點擊可展開 |
 | **選用 Basic Auth** | 透過環境變數啟用 Web UI 登入保護 |
-| **單檔打包** | 支援 PyInstaller 打包成單一執行檔 |
+| **單例執行** | 重複開啟時自動聚焦現有瀏覽器分頁，不會產生多個 server |
+| **系統匣圖示** | 右下角常駐圖示，隨時確認程式是否在執行，雙擊開啟瀏覽器，右鍵可結束程序 |
+| **單檔打包** | 支援 PyInstaller 打包成單一執行檔，無需安裝 Python |
 
 ---
 
@@ -53,14 +58,16 @@
 ```
 flask>=3.0
 paramiko>=3.4
-pyserial>=3.5
+pyserial>=3.5     # 選用：COM Port 功能
+pystray>=0.19     # 選用：系統匣圖示
+pillow>=10.0      # 選用：系統匣圖示
 ```
 
 ```bash
 pip install -r requirements.txt
 ```
 
-> `pyserial` 為選用套件，未安裝時 COM Port 功能自動停用，SSH 功能不受影響。
+> 選用套件未安裝時對應功能自動停用，其他功能不受影響。
 
 ---
 
@@ -108,6 +115,20 @@ python main.py
 - 支援編輯（✏️）、刪除（🗑）
 - **📂 開啟舊檔** — 從 `.db` 匯入連線（合併，不覆蓋現有）
 - **💾 另存新檔** — 匯出所有連線為 `.db` 供備份或分享
+
+### 關閉應用程式
+
+CommandWebGUI 在背景以本機 HTTP server 執行，有以下三種方式可以關閉：
+
+| 方式 | 操作 | 適用情境 |
+|------|------|---------|
+| **UI 關閉按鈕** | 點擊頁面右上角 **✕ 關閉**，確認後程序立即終止 | 所有情境 |
+| **系統匣右鍵** | 右下角圖示右鍵 → **結束** | 需安裝 pystray + pillow |
+| **Console Ctrl+C** | 在終端機按 Ctrl+C，乾淨終止不產生錯誤訊息 | 直接以 `python main.py` 執行時 |
+
+> **系統匣圖示**（`[>` 終端符號）：安裝 pystray + pillow 後，程式執行期間會在右下角工作列顯示圖示，tooltip 顯示當前 URL。雙擊可重新開啟瀏覽器。
+
+> **忘記有沒有開？** 直接再點一次 `.exe` 或重新執行 `python main.py`，若 server 已在執行則自動開啟瀏覽器指向現有分頁，不會產生第二個 server。
 
 ---
 
@@ -161,21 +182,21 @@ WEBGUI_USER=admin WEBGUI_PASS=secret python main.py
 
 ```bash
 pip install pyinstaller
-
-# Windows
-pyinstaller --onefile --noconsole ^
-  --add-data "templates;templates" ^
-  --add-data "static;static" ^
-  main.py
-
-# Linux / macOS
-pyinstaller --onefile --noconsole \
-  --add-data "templates:templates" \
-  --add-data "static:static" \
-  main.py
 ```
 
-產生的 `dist/main.exe`（或 `dist/main`）可直接發佈，`profiles.db` 會在同目錄自動建立。
+Windows：
+```
+pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "templates;templates" --add-data "static;static" --hidden-import "pystray._win32" --hidden-import "PIL._imagingtk" main.py
+```
+
+Linux / macOS：
+```
+pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "templates:templates" --add-data "static:static" --hidden-import "pystray._xorg" main.py
+```
+
+產生的 `dist/CommandWebGUI.exe`（或 `dist/CommandWebGUI`）可直接發佈，`profiles.db` 與 `commandwebgui.lock` 會在同目錄自動建立。
+
+打包後無 console 視窗，透過 **UI 關閉按鈕** 或 **系統匣右鍵 → 結束** 終止程序。
 
 ---
 
