@@ -4,9 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CommandWebGUI — BMC 指令速查 / 執行台</title>
+  <title>CommandWebGUI — OpenBMC 開發輔助工具</title>
   <meta name="description" content="OpenBMC SSH 互動指令速查執行台，支援 obmcutil、ipmitool、busctl、systemctl 等指令">
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/dbus.css">
 </head>
 
 <body>
@@ -111,7 +112,7 @@
   <div id="welcomePage">
     <div class="welcome-card">
       <div class="welcome-title">CommandWebGUI</div>
-      <div class="welcome-subtitle">BMC 開發輔助工具 — OpenBMC 指令速查 + SSH 互動執行台</div>
+      <div class="welcome-subtitle">OpenBMC 韌體開發輔助工具 — 指令面板、終端機、D-Bus 分析</div>
       <div class="welcome-section">
         <div class="welcome-sec-title">功能</div>
         <div class="feature-grid">
@@ -152,13 +153,19 @@
   </div>
 
   <!-- Main Content -->
-  <div id="mainContent" style="display:none">
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="🔍 搜尋指令..." oninput="filterAll(this.value)">
-      <span class="search-counter" id="searchCounter" style="display:none;"></span>
-      <button class="history-open-btn" onclick="openHistorySidebar()" title="命令歷史">📜 歷史</button>
-      <button class="history-open-btn" style="margin-left: 8px;" onclick="el('chipPanel').classList.add('show'); el('chipInput').focus();" title="開啟指令執行面板">⚡ 終端機</button>
-    </div>
+  <div id="mainContent" style="display:none; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+    <div id="appCmdView" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+      <div class="search-bar">
+        <div class="view-switcher" id="viewSwitcher">
+          <button class="view-btn" data-view="dbus" onclick="switchAppTab('dbus')">D-Bus</button>
+        </div>
+        <input type="text" id="searchInput" placeholder="🔍 搜尋指令..." oninput="filterAll(this.value)">
+        <span class="search-counter" id="searchCounter" style="display:none;"></span>
+        <div class="search-actions">
+          <button class="history-open-btn" onclick="openHistorySidebar()" title="命令歷史">📜 歷史</button>
+          <button class="history-open-btn" onclick="el('chipPanel').classList.add('show'); el('chipInput').focus();" title="開啟指令執行面板">⚡ 終端機</button>
+        </div>
+      </div>
     <div class="container">
       <nav class="nav" id="navPanel"></nav>
       <div class="content" id="commandSections">
@@ -177,6 +184,60 @@
       <button id="profileDeleteBtn" disabled onclick="deleteSelectedProfile()">刪除</button>
       <span id="profileStatus" class="profile-status"></span>
     </div>
+    </div> <!-- end appCmdView -->
+
+    <div id="dbus-app-container" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <header>
+        <button class="view-back-btn" onclick="switchAppTab('cmd')">← 指令面板</button>
+        <h1>D-Bus 分析</h1>
+        <input id="search" type="text" placeholder="Filter services…" autocomplete="off">
+        <button id="btn-snapshot" title="Download Snapshot" style="background:none;border:1px solid #444;color:#888;padding:1px 7px;cursor:pointer;">Snapshot</button>
+        <button id="btn-diff" title="Compare Snapshot" style="background:none;border:1px solid #444;color:#888;padding:1px 7px;cursor:pointer;">Diff</button>
+      </header>
+
+      <div id="app" style="display:flex; flex:1; overflow:hidden;">
+        <aside id="sidebar">
+          <div id="tree"></div>
+        </aside>
+        <div id="divider"></div>
+        <section id="detail">
+          <div id="detail-content">
+            <div id="detail-placeholder">Select a service on the left, then click an object path.</div>
+          </div>
+          <div id="sig-panel">
+            <div id="sig-bar">
+              <button id="tab-sig" class="tab active" style="font-size:11px;background:#333;color:#fff;border:none;padding:2px 8px;cursor:pointer;">SIGNALS</button>
+              <button id="tab-jnl" class="tab" style="font-size:11px;background:#222;color:#888;border:none;padding:2px 8px;cursor:pointer;">JOURNAL</button>
+              <span id="sig-controls" style="display:flex; flex:1; gap:8px; margin-left:20px; align-items:center;">
+                <select id="sig-filter"><option value="">All paths</option></select>
+                <input id="sig-payload" type="text" placeholder="Payload regex" style="background:#2a2d2e;color:#9cdcfe;border:1px solid #3a3a3a;font-family:monospace;font-size:10px;padding:1px 4px;width:120px;">
+                <button id="sig-clear" title="Clear all signals in the list">Clear List</button>
+              </span>
+              <span id="jnl-controls" style="display:none; gap:8px; margin-left:auto; align-items:center;">
+                <button id="jnl-clear" title="Clear all logs in the journal">Clear Journal</button>
+              </span>
+            </div>
+            <div id="sig-list"></div>
+            <div id="jnl-list" style="display:none; overflow-y:auto; flex:1; font-size:11px;"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Diff modal -->
+      <div id="diff-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="width: 80%; height: 80%; display: flex; flex-direction: column;">
+          <div class="modal-title">Compare Snapshot</div>
+          <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <input type="file" id="diff-file" accept=".json">
+            <span style="font-size:12px;color:#888;">Select a previously downloaded snapshot JSON.</span>
+          </div>
+          <div id="diff-result" style="flex:1; overflow:auto; background:#1e1e1e; padding:10px; border:1px solid #444; font-size:12px; white-space:pre-wrap;"></div>
+          <div class="modal-actions">
+            <button id="d-close">Close</button>
+          </div>
+        </div>
+      </div>
+    </div> <!-- end dbus-app-container -->
   </div>
 
   <!-- Warning Modal -->
@@ -225,7 +286,14 @@
     </div>
   </div>
 
+  <script>
+    function switchAppTab(tab) {
+      document.getElementById('appCmdView').style.display = tab === 'cmd' ? 'flex' : 'none';
+      document.getElementById('dbus-app-container').style.display = tab === 'dbus' ? 'flex' : 'none';
+    }
+  </script>
   <script src="/static/app.js"></script>
+  <script src="/static/dbus.js"></script>
 </body>
 
 </html>

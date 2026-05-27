@@ -1,8 +1,8 @@
 # CommandWebGUI
 
-**BMC 開發輔助工具 — OpenBMC 指令速查 + SSH / Serial 互動執行台**
+OpenBMC 韌體開發輔助工具 — 指令面板、終端機、D-Bus 分析
 
-輕量化瀏覽器工具，專為 BMC 韌體開發人員設計。透過 **SSH** 或 **COM Port** 連線至 OpenBMC 目標機，自動偵測可用工具後動態建立指令面板，無需安裝任何額外軟體。
+輕量化瀏覽器工具，專為 BMC 韌體開發人員設計。透過 **SSH** 或 **COM Port** 連線至 OpenBMC 目標機，自動偵測可用工具後動態建立指令面板，整合終端機與 D-Bus 分析，無需安裝任何額外軟體。
 
 ---
 
@@ -12,22 +12,26 @@
 
 ![首頁](docs/screenshot_welcome.png)
 
-### 連線欄：SSH 模式 / COM Port 模式
+### SSH / COM Port 設定
 
-![SSH 模式](docs/screenshot_connbar_ssh.png)
+![SSH](docs/screenshot_connbar_ssh.png)
+![COM](docs/screenshot_connbar_com.png)
 
-![COM Port 模式](docs/screenshot_connbar_com.png)
-
-### 主畫面 — 系統資訊與指令面板
+### 主畫面 — 指令面板
 
 ![主畫面](docs/screenshot_main_viewport.png)
 
-### 服務管理面板
+### 服務管理面板 — Running Services 一覽
 
 ![服務管理](docs/screenshot_services.png)
 
-### 啟動服務工具圖示
-![工具圖示](docs/screenshot_icon.png)
+### D-Bus 分析面板 — 服務樹 / 屬性 / Signal / Snapshot
+
+![D-Bus 分析面板佈局](docs/dbus-verify-panel.png)
+
+### icon工具圖示
+
+![icon](docs/screenshot_icon.png)
 
 ---
 
@@ -40,13 +44,14 @@
 | **指令速查表** | 依類別分組、可搜尋，點擊即執行 |
 | **服務管理面板** | 互動式 running services 列表，支援 status / stop / restart / journalctl 一鍵操作 |
 | **內建終端機** | 自由輸入指令，↑↓ 鍵瀏覽歷史 |
+| **D-Bus 分析** | 瀏覽服務樹、查看物件屬性、即時監看 Signal、下載快照、比對差異 |
 | **持久化歷史** | 指令歷史存入 SQLite，重新整理後仍保留 |
 | **連線設定檔** | 儲存、編輯、刪除已命名連線；支援匯入／匯出 `.db` 檔案 |
 | **ANSI 顏色渲染** | BMC 指令輸出的顏色在瀏覽器中正確顯示 |
 | **超長輸出摺疊** | 超過 120 行自動摺疊，點擊可展開 |
 | **選用 Basic Auth** | 透過環境變數啟用 Web UI 登入保護 |
 | **單例執行** | 重複開啟時自動聚焦現有瀏覽器分頁，不會產生多個 server |
-| **系統匣圖示** | 右下角常駐圖示，隨時確認程式是否在執行，雙擊開啟瀏覽器，右鍵可結束程序 |
+| **系統匣圖示** | 右下角常駐圖示，雙擊開啟瀏覽器，右鍵可結束程序 |
 | **單檔打包** | 支援 PyInstaller 打包成單一執行檔，無需安裝 Python |
 
 ---
@@ -58,6 +63,7 @@
 ```
 flask>=3.0
 paramiko>=3.4
+flask-sock>=0.6
 pyserial>=3.5     # 選用：COM Port 功能
 pystray>=0.19     # 選用：系統匣圖示
 pillow>=10.0      # 選用：系統匣圖示
@@ -87,26 +93,37 @@ python main.py
 
 ## 使用方式
 
-### SSH 連線
+### 連線
 
-1. 連線欄選擇 **SSH**（預設）
-2. 填入 Host（BMC IP）、Port（預設 22）、User、Password
-3. 點擊**連線**，工具自動探測可用工具並建立指令面板
+1. 連線欄選擇 **SSH**（預設）或 **COM Port**
+2. SSH：填入 Host（BMC IP）、Port（預設 22）、User、Password
+3. COM：從下拉選單選擇 COM Port、Baud Rate（預設 115200）、User、Password
+4. 點擊**連線**，工具自動探測可用指令並建立面板
 
-### COM Port 連線
+### 指令面板
 
-1. 連線欄選擇 **COM**
-2. 從下拉選單選擇偵測到的 COM Port，或手動輸入（Windows：`COM3`；Linux：`/dev/ttyUSB0`）
-3. 選擇 Baud Rate（預設 115200）
-4. 填入 User 與 Password（用於 serial console 自動登入）
-5. 點擊**連線**
-
-### 執行指令
-
-- **點擊指令列** — 立即透過 SSH／Serial 執行
-- **底部終端機面板** — 自由輸入指令後按 Enter 或點**執行**
-- **↑ / ↓** — 在終端機面板中瀏覽歷史指令
+- **點擊指令列** — 立即透過 SSH／Serial 執行，輸出展開於下方
 - 標有 ⚠️ 的指令執行前會顯示確認對話框
+- 左側導覽列可快速跳至各指令區塊
+- 搜尋框支援即時過濾所有指令
+
+### 終端機
+
+- 點擊右上角 **⚡ 終端機** 開啟底部面板
+- 自由輸入指令後按 Enter 或點**執行**
+- **↑ / ↓** 鍵瀏覽歷史指令
+
+### D-Bus 分析
+
+連線成功後點擊頂部 **D-Bus 分析** 分頁：
+
+- **服務樹**（左側）— 列出所有 D-Bus 服務，點擊展開物件路徑
+- **屬性面板**（右側）— 點選路徑後顯示所有 interface、method、property；property 值即時透過 Signal 自動更新
+- **Signal 面板**（下方）— 即時串流 `busctl monitor` 輸出，可依路徑過濾或用 Payload regex 篩選
+- **Snapshot** — 下載當前選取服務的全部 property 快照（JSON）
+- **Diff** — 比對兩個快照，列出差異 property
+
+> 重新連線 BMC 時，D-Bus 狀態（服務列表、Signal 串流）會自動重置。
 
 ### 連線設定檔
 
@@ -118,17 +135,11 @@ python main.py
 
 ### 關閉應用程式
 
-CommandWebGUI 在背景以本機 HTTP server 執行，有以下三種方式可以關閉：
-
-| 方式 | 操作 | 適用情境 |
-|------|------|---------|
-| **UI 關閉按鈕** | 點擊頁面右上角 **✕ 關閉**，確認後程序立即終止 | 所有情境 |
-| **系統匣右鍵** | 右下角圖示右鍵 → **結束** | 需安裝 pystray + pillow |
-| **Console Ctrl+C** | 在終端機按 Ctrl+C，乾淨終止不產生錯誤訊息 | 直接以 `python main.py` 執行時 |
-
-> **系統匣圖示**（`[>` 終端符號）：安裝 pystray + pillow 後，程式執行期間會在右下角工作列顯示圖示，tooltip 顯示當前 URL。雙擊可重新開啟瀏覽器。
-
-> **忘記有沒有開？** 直接再點一次 `.exe` 或重新執行 `python main.py`，若 server 已在執行則自動開啟瀏覽器指向現有分頁，不會產生第二個 server。
+| 方式 | 操作 |
+|------|------|
+| **UI 關閉按鈕** | 點擊頁面右上角 **✕ 關閉** |
+| **系統匣右鍵** | 右下角圖示右鍵 → **結束** |
+| **Console Ctrl+C** | 在終端機按 Ctrl+C |
 
 ---
 
@@ -145,8 +156,6 @@ python main.py
 # Linux / macOS
 WEBGUI_USER=admin WEBGUI_PASS=secret python main.py
 ```
-
-未設定環境變數（預設）→ 不需要登入。
 
 ---
 
@@ -184,19 +193,19 @@ WEBGUI_USER=admin WEBGUI_PASS=secret python main.py
 pip install pyinstaller
 ```
 
-Windows：
+使用專案內建的 `.spec`（推薦）：
+
+```bash
+pyinstaller CommandWebGUI.spec
+```
+
+或手動指定（Windows）：
+
 ```
 pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "templates;templates" --add-data "static;static" --hidden-import "pystray._win32" --hidden-import "PIL._imagingtk" main.py
 ```
 
-Linux / macOS：
-```
-pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "templates:templates" --add-data "static:static" --hidden-import "pystray._xorg" main.py
-```
-
-產生的 `dist/CommandWebGUI.exe`（或 `dist/CommandWebGUI`）可直接發佈，`profiles.db` 與 `commandwebgui.lock` 會在同目錄自動建立。
-
-打包後無 console 視窗，透過 **UI 關閉按鈕** 或 **系統匣右鍵 → 結束** 終止程序。
+產生的 `dist/CommandWebGUI.exe` 可直接發佈，`profiles.db` 與 `commandwebgui.lock` 會在同目錄自動建立。
 
 ---
 

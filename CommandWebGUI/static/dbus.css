@@ -1,0 +1,87 @@
+#dbus-app-container { font-family: monospace; font-size: 13px; display: flex; flex-direction: column; min-height: 0; background: #1e1e1e; color: #d4d4d4; }
+
+/* Header */
+#dbus-app-container header { padding: 7px 14px; background: #252526; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+#dbus-app-container header h1 { font-size: 14px; color: #4ec9b0; flex-shrink: 0; }
+.view-back-btn { background: none; border: 1px solid #444; color: #888; font-size: 11px; padding: 2px 8px; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, color 0.15s; }
+.view-back-btn:hover { border-color: #4ec9b0; color: #4ec9b0; }
+#search { flex: 1; max-width: 300px; background: #3c3c3c; color: #d4d4d4; border: 1px solid #555; padding: 3px 8px; font-family: monospace; font-size: 12px; }
+#search::placeholder { color: #666; }
+#conn-label { font-size: 11px; color: #888; flex-shrink: 0; }
+#conn-btn { background: none; border: 1px solid #444; color: #888; font-size: 13px; padding: 1px 7px; cursor: pointer; flex-shrink: 0; }
+#conn-btn:hover { border-color: #4ec9b0; color: #4ec9b0; }
+
+/* App layout */
+#app { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── Sidebar ── */
+#sidebar { width: 35%; min-width: 150px; display: flex; flex-direction: column; background: #1e1e2e; overflow: hidden; }
+#divider { width: 4px; background: #333; cursor: col-resize; flex-shrink: 0; transition: background 0.15s; }
+#divider:hover, #divider.dragging { background: #4ec9b0; }
+#tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+
+.svc-wrap {}
+.svc-row { display: flex; align-items: center; padding: 3px 8px; cursor: pointer; user-select: none; gap: 4px; }
+.svc-row:hover { background: #2a2d2e; }
+.caret { color: #555; font-size: 10px; flex-shrink: 0; width: 12px; text-align: center; }
+.svc-name { color: #4ec9b0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.svc-paths { padding-left: 14px; display: none; }
+.svc-paths.open { display: block; }
+.path-row { padding: 2px 8px 2px 6px; cursor: pointer; color: #9cdcfe; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.path-row:hover { background: #2a2d2e; }
+.path-row.selected { background: #094771; color: #fff; }
+.tree-loading { color: #555; font-size: 11px; padding: 3px 10px; }
+
+/* ── Detail panel ── */
+#detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+#detail-content { flex: 1 1 70%; overflow-y: auto; padding: 12px; min-height: 0; }
+#detail-placeholder { color: #555; font-size: 12px; padding: 8px 0; }
+#detail-path { font-size: 11px; color: #888; margin-bottom: 10px; }
+#detail-path .d-service { color: #4ec9b0; }
+#detail-path .d-path { color: #9cdcfe; }
+
+#dbus-app-container details { margin-bottom: 6px; border: 1px solid #2d2d2d; border-radius: 3px; }
+#dbus-app-container summary { padding: 5px 8px; background: #252526; cursor: pointer; color: #4ec9b0; font-size: 12px; list-style: none; }
+#dbus-app-container summary::-webkit-details-marker { display: none; }
+#dbus-app-container summary::before { content: "▶ "; font-size: 10px; }
+#dbus-app-container details[open] summary::before { content: "▼ "; }
+
+#dbus-app-container table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+#dbus-app-container td { padding: 3px 8px; border-bottom: 1px solid #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-name { color: #9cdcfe; width: 35%; }
+.m-type { color: #ce9178; width: 12%; }
+.m-sig  { color: #b5cea8; width: 10%; }
+.m-val  { color: #dcdcaa; }
+
+@keyframes flash { 0% { color: #fff; background: #1a3a1a; } 100% { color: #dcdcaa; background: transparent; } }
+.m-val.live-update { animation: flash 0.6s ease-out; }
+
+/* ── Signal panel ── */
+#sig-panel { flex: 0 0 30%; border-top: 2px solid #333; display: flex; flex-direction: column; min-height: 0; background: #0d0d14; }
+#sig-bar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-bottom: 1px solid #222; flex-shrink: 0; }
+.sig-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+#sig-filter { flex: 1; background: #2a2d2e; color: #9cdcfe; border: 1px solid #3a3a3a; font-family: monospace; font-size: 10px; padding: 1px 4px; min-width: 0; cursor: pointer; }
+#sig-clear { font-size: 10px; padding: 1px 7px; background: #333; color: #999; border: none; cursor: pointer; flex-shrink: 0; }
+#sig-list { overflow-y: auto; flex: 1; }
+.sig-entry { display: flex; gap: 6px; padding: 2px 10px; font-size: 11px; border-bottom: 1px solid #0e0e0e; }
+.sig-time   { color: #555; flex-shrink: 0; width: 52px; }
+.sig-path   { color: #9cdcfe; flex-shrink: 0; width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; direction: rtl; }
+.sig-path:hover { color: #4ec9b0; text-decoration: underline; }
+.sig-member { color: #dcdcaa; flex-shrink: 0; width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sig-iface  { color: #ce9178; flex-shrink: 0; width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sig-brief  { color: #b5cea8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Connection modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay.hidden { display: none; }
+.modal-box { background: #252526; border: 1px solid #444; padding: 20px; min-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+.modal-title { font-size: 13px; color: #4ec9b0; font-weight: bold; margin-bottom: 4px; }
+.modal-field { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #888; }
+.modal-field input { flex: 1; background: #3c3c3c; color: #d4d4d4; border: 1px solid #555; padding: 4px 8px; font-family: monospace; font-size: 12px; }
+#c-error { font-size: 11px; color: #f44747; min-height: 14px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-actions button { padding: 4px 14px; font-family: monospace; font-size: 12px; border: none; cursor: pointer; }
+#c-cancel  { background: #3c3c3c; color: #999; }
+#c-connect { background: #0e639c; color: #fff; }
+#c-connect:hover { background: #1177bb; }

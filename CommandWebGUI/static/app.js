@@ -303,7 +303,7 @@ async function connectBMC() {
 
     el('connTxt').textContent = '探測中...';
     el('welcomePage').style.display = 'none';
-    el('mainContent').style.display = 'block';
+    el('mainContent').style.display = 'flex';
     el('commandSections').innerHTML = `
       <div class="discover-loading">
         <div class="discover-icon">🔍</div>
@@ -334,6 +334,7 @@ async function connectBMC() {
 
     renderCommands();
     await populateProfileSelect();
+    if (typeof reconnectDBus === 'function') reconnectDBus();
   } catch (e) {
     el('connDot').className = 'conn-dot red';
     el('connTxt').textContent = '連線失敗';

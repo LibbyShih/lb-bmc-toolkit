@@ -1,3 +1,4 @@
+import atexit
 import sys
 import os
 import signal
@@ -8,7 +9,9 @@ import re
 import threading
 import base64
 from pathlib import Path
+from port_manager import get_free_port, write_lock, read_lock, release_lock
 from flask import Flask, render_template, request, jsonify, Response
+from flask_sock import Sock
 import paramiko
 import socket
 import webbrowser
@@ -80,11 +83,6 @@ def init_db():
 init_db()
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 
-
-def get_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        return s.getsockname()[1]
 
 def open_browser(port):
     webbrowser.open_new(f'http://localhost:{port}')
@@ -952,7 +950,7 @@ def shutdown():
         if _tray_icon:
             try: _tray_icon.stop()
             except Exception: pass
-        _remove_lock()
+        release_lock(LOCK_FILE)
         os._exit(0)
     threading.Thread(target=_exit, daemon=True).start()
     return jsonify({'ok': True})
@@ -964,28 +962,14 @@ def shutdown():
 
 def _check_single_instance() -> bool:
     """Return True if we are the only instance; False if another is already running."""
-    if LOCK_FILE.exists():
-        try:
-            parts = LOCK_FILE.read_text().strip().split('\n')
-            existing_port = int(parts[1]) if len(parts) > 1 else None
-            if existing_port:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(1)
-                    if s.connect_ex(('localhost', existing_port)) == 0:
-                        webbrowser.open_new(f'http://localhost:{existing_port}')
-                        return False
-        except Exception:
-            pass
+    existing_port = read_lock(LOCK_FILE)
+    if existing_port:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            if s.connect_ex(('localhost', existing_port)) == 0:
+                webbrowser.open_new(f'http://localhost:{existing_port}')
+                return False
     return True
-
-
-def _write_lock(port: int):
-    LOCK_FILE.write_text(f'{os.getpid()}\n{port}')
-
-
-def _remove_lock():
-    try: LOCK_FILE.unlink(missing_ok=True)
-    except Exception: pass
 
 
 def _make_tray_image():
@@ -1012,7 +996,7 @@ def _run_tray(port: int):
 
     def on_exit(icon, item):
         icon.stop()
-        _remove_lock()
+        release_lock(LOCK_FILE)
         os._exit(0)
 
     img = _make_tray_image()
@@ -1028,18 +1012,23 @@ def _run_tray(port: int):
 #  Entry Point
 # ═══════════════════════════════════════════════════════════════
 
+from dbus_engine import register_dbus_routes
+sock = Sock(app)
+register_dbus_routes(app, sock, _get_pooled_client, _evict_from_pool)
+
 if __name__ == '__main__':
     if not _check_single_instance():
         sys.exit(0)
 
-    available_port = get_free_port()
-    _write_lock(available_port)
+    available_port = int(os.environ.get("PORT") or get_free_port())
+    write_lock(available_port, LOCK_FILE)
+    atexit.register(release_lock, LOCK_FILE)
 
     def _shutdown_handler(sig, frame):
         if _tray_icon:
             try: _tray_icon.stop()
             except Exception: pass
-        _remove_lock()
+        release_lock(LOCK_FILE)
         os._exit(0)
 
     signal.signal(signal.SIGINT,  _shutdown_handler)
@@ -1064,4 +1053,4 @@ if __name__ == '__main__':
     else:
         Timer(1.5, open_browser, args=[available_port]).start()
         app.run(host='0.0.0.0', port=available_port, debug=False)
-        _remove_lock()
+        release_lock(LOCK_FILE)
