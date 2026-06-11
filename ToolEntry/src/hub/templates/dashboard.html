@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMC ToolEntry — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/hub-static/hub.css">
+  <link rel="stylesheet" href="/api/bmc_template/static/app_shell.css">
+</head>
+<body>
+<header class="bt-shell-bar">
+  <span class="bt-tool-name">{{ tool_display_name('hub') | safe }}</span>
+  <div class="bt-conn-chip">
+    {% if bmc.ssh_ok %}
+    <span class="bt-dot ok"></span>
+    {% else %}
+    <span class="bt-dot warn" title="{{ bmc.ssh_err }}"></span>
+    {% endif %}
+    <span class="bt-conn-badge{% if bmc.conn_type == 'serial' %} bt-conn-badge--com{% endif %}">{{ bmc.conn_type | upper }}</span>
+    <span class="bt-host">{{ bmc | format_conn_host }}</span>
+    {% if not bmc.ssh_ok %}
+    <span class="dash-ssh-warn" title="{{ bmc.ssh_err }}">⚠ SSH 未驗證</span>
+    {% endif %}
+  </div>
+  <div class="bt-header-actions">
+    <a href="/disconnect" class="bt-header-btn">首頁</a>
+    <button type="button" class="bt-header-btn danger" onclick="shutdownToolService('BMC ToolEntry 服務')">✕ 結束服務</button>
+  </div>
+</header>
+
+<div class="dash-body">
+  <div class="dash-title">選擇工具</div>
+  <div class="tool-grid">
+
+    <a href="/cwg/" class="tool-card">
+      <div class="tool-icon">⌨️</div>
+      <div class="tool-name">CommandWebGUI</div>
+      <div class="tool-desc">
+        SSH 指令執行台<br>
+        D-Bus Explorer<br>
+        Discover / Survey
+      </div>
+      <span class="tool-badge">SSH · COM</span>
+    </a>
+
+    <a href="/ipmi/" class="tool-card">
+      <div class="tool-icon">📡</div>
+      <div class="tool-name">IPMI Inspector</div>
+      <div class="tool-desc">
+        Sensors · SEL · SDR · FRU<br>
+        Raw Command<br>
+        PCAP 解析 · Spec Ref
+      </div>
+      <span class="tool-badge">IPMI over LAN</span>
+    </a>
+
+  </div>
+</div>
+
+<script src="/api/bmc_template/static/service.js"></script>
+</body>
+</html>

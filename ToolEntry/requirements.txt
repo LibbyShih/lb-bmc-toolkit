@@ -1,0 +1,6 @@
+flask>=3.0
+flask-sock>=0.7
+paramiko>=3.0
+pyghmi>=1.5
+pyserial>=3.5
+scapy>=2.5

@@ -1,0 +1,107 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0b1928;
+  --bg2:      #0f2035;
+  --bg3:      #172d45;
+  --border:   #1e3a55;
+  --accent:   #4fc3f7;
+  --accent2:  #29b6f6;
+  --text:     #d0e8ff;
+  --text-dim: #6a8fab;
+  --danger:   #ef5350;
+  --success:  #4caf50;
+  --radius:   8px;
+
+  /* Aliases for profile_manager.css (sp-* classes) */
+  --te-bg2:        var(--bg2);
+  --te-bg3:        var(--bg3);
+  --te-border:     var(--border);
+  --te-border-2:   var(--border);
+  --te-text:       var(--text);
+  --te-text-bright:var(--text);
+  --te-text-dim:   var(--text-dim);
+  --te-accent:     var(--accent);
+  --te-accent-dim: var(--accent2);
+  --te-radius:     var(--radius);
+  --te-radius-sm:  4px;
+  --te-transition: 0.2s ease;
+}
+
+/* Save-as-Profile row (ToolEntry exclusive, inside sp-connect-card) */
+.sp-save-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.sp-save-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); flex-shrink: 0; }
+.sp-save-row label { font-size: 12.5px; color: var(--text-dim); cursor: pointer; }
+.sp-save-row input[type=text] {
+  flex: 1;
+  min-width: 140px;
+  padding: 6px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── Dashboard ──────────────────────────────────────────────── */
+.dash-body {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dash-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+}
+.tool-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .15s, background .15s, transform .1s;
+  display: block;
+}
+.tool-card:hover { border-color: var(--accent); background: var(--bg3); transform: translateY(-2px); }
+.tool-icon { font-size: 28px; margin-bottom: 12px; }
+.tool-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+.tool-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.tool-badge {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--bg3);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}

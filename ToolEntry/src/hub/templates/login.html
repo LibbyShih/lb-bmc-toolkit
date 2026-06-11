@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMC ToolEntry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/hub-static/hub.css">
+  <link rel="stylesheet" href="/api/bmc_template/static/profile_manager.css?v=3.6">
+  <link rel="stylesheet" href="/api/bmc_template/static/app_shell.css?v=3.6">
+</head>
+<body>
+
+  {% set cp_show_shutdown = true %}
+  {% set cp_error = error | default('') %}
+  {% set cp_accent   = 'BMC' %}
+  {% set cp_name     = ' ToolEntry' %}
+  {% set cp_subtitle = 'BMC 統一連線入口' %}
+  {% set cp_form_tpl = '_hub_form.html' %}
+  {% set cp_cards_id = 'profileCards' %}
+  {% include '_connect_page.html' %}
+
+  <script src="/api/bmc_template/static/conn_display.js"></script>
+  <script src="/api/bmc_template/static/connection_test.js?v=3.8"></script>
+  <script src="/api/bmc_template/static/profile_manager.js?v=3.6"></script>
+  <script src="/api/bmc_template/static/service.js"></script>
+  <script>
+    window.BMC_SERVICE_NAME = 'BMC ToolEntry 服務';
+    window.SERVICE_SHUTDOWN_URL = '/api/service/shutdown';
+
+    let _connType = '{{ form_conn_type | default("ssh") }}';
+    let _allowFormSubmit = false;
+
+    window.pm = new ProfileManager({
+      apiBase: '/api',
+      onDbOpened: function(name) {
+        pm.linkedDbLabel = name;
+        pm.updateDbSourceLabel();
+      }
+    });
+
+    function setType(type) {
+      _connType = type;
+      document.getElementById('connType').value = type;
+      const isSsh = type === 'ssh';
+      document.getElementById('btnSsh').className    = isSsh  ? 'active' : '';
+      document.getElementById('btnSerial').className = !isSsh ? 'active' : '';
+      document.getElementById('sshFields').style.display    = isSsh  ? '' : 'none';
+      document.getElementById('serialFields').style.display = !isSsh ? '' : 'none';
+      document.querySelectorAll('#sshFields input')
+        .forEach(el => el.disabled = !isSsh);
+      document.querySelectorAll('#serialFields input, #serialFields select')
+        .forEach(el => el.disabled = isSsh);
+    }
+
+    function hubFormPayload(form) {
+      const fd = new FormData(form);
+      const connType = fd.get('conn_type') || 'ssh';
+      const sshPort = parseInt(fd.get('ssh_port'), 10) || (connType === 'serial' ? 115200 : 22);
+      return {
+        host: (fd.get('host') || '').trim(),
+        ssh_port: sshPort,
+        port: sshPort,
+        ipmi_port: parseInt(fd.get('ipmi_port'), 10) || 623,
+        user: (fd.get('user') || '').trim(),
+        password: fd.get('password') || '',
+        conn_type: connType,
+      };
+    }
+
+    function loadProfileIntoForm(p) {
+      setType(p.conn_type || 'ssh');
+      const isSsh   = (p.conn_type || 'ssh') === 'ssh';
+      const section = isSsh ? '#sshFields' : '#serialFields';
+      const q       = name => document.querySelector(`${section} [name="${name}"]`);
+      const sshPort = p.ssh_port != null && p.ssh_port !== '' ? p.ssh_port : (isSsh ? 22 : 115200);
+      if (q('host'))      q('host').value      = p.host      || '';
+      if (q('ssh_port'))  q('ssh_port').value  = sshPort;
+      if (q('ipmi_port')) q('ipmi_port').value = p.ipmi_port || 623;
+      if (q('user'))      q('user').value      = p.user      || '';
+      if (q('password'))  q('password').value  = p.password  || '';
+    }
+
+    async function connectFromProfile(p) {
+      loadProfileIntoForm(p);
+      const form = document.getElementById('loginForm');
+      const payload = hubFormPayload(form);
+      if (!payload.host || !payload.user) {
+        showConnectError('Host 和 Username 不能空白');
+        throw new Error('Host 和 Username 不能空白');
+      }
+      showConnectError('');
+      try {
+        await testConnection(payload, { apiBase: '/api' });
+      } catch (e) {
+        showConnectError(e.message);
+        throw e;
+      }
+      pm.setActiveConnectLabel('連線中…');
+      _allowFormSubmit = true;
+      form.submit();
+    }
+
+    async function submitLoginForm(form) {
+      const btn = document.getElementById('connectBtn');
+      const payload = hubFormPayload(form);
+
+      if (!payload.host || !payload.user) {
+        showConnectError('Host 和 Username 不能空白');
+        return;
+      }
+
+      showConnectError('');
+      btn.textContent = '測試連線中…';
+      btn.disabled = true;
+
+      try {
+        await testConnection(payload, { apiBase: '/api' });
+      } catch (e) {
+        showConnectError(e.message);
+        btn.textContent = 'Connect';
+        btn.disabled = false;
+        return;
+      }
+
+      btn.textContent = '連線中…';
+      _allowFormSubmit = true;
+      form.submit();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      if (_allowFormSubmit) {
+        _allowFormSubmit = false;
+        return;
+      }
+      e.preventDefault();
+      submitLoginForm(this);
+    });
+
+    setType(_connType);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      pm.initConnectPage({
+        cardsId: 'profileCards',
+        onConnect: connectFromProfile,
+        collectProfileData: () => hubFormPayload(document.getElementById('loginForm')),
+      });
+    });
+  </script>
+</body>
+</html>

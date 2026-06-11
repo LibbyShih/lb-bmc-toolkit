@@ -1,0 +1,79 @@
+{# ToolEntry connect form — SSH / COM Port toggle #}
+<div class="sp-conn-toggle">
+  <button id="btnSsh"    class="{% if (form_conn_type|default('ssh')) == 'ssh'    %}active{% endif %}" onclick="setType('ssh')">SSH</button>
+  <button id="btnSerial" class="{% if (form_conn_type|default('ssh')) == 'serial' %}active{% endif %}" onclick="setType('serial')">COM Port</button>
+</div>
+
+<form method="POST" action="/connect" id="loginForm">
+  <input type="hidden" name="conn_type" id="connType" value="{{ form_conn_type | default('ssh') }}">
+
+  <div id="sshFields">
+    <div class="sp-form-group">
+      <label>BMC IP / Hostname</label>
+      <input name="host" type="text" placeholder="192.168.1.100"
+        value="{{ form_host | default('') }}" required autocomplete="off" spellcheck="false">
+    </div>
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label>SSH Port</label>
+        <input name="ssh_port" type="number" placeholder="22"
+          value="{{ form_ssh_port | default(22) }}" min="1" max="65535">
+      </div>
+      <div class="sp-form-group">
+        <label>IPMI Port</label>
+        <input name="ipmi_port" type="number" placeholder="623"
+          value="{{ form_ipmi_port | default(623) }}" min="1" max="65535">
+      </div>
+    </div>
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label>Username</label>
+        <input name="user" type="text" placeholder="root"
+          value="{{ form_user | default('') }}" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="sp-form-group">
+        <label>Password</label>
+        <input name="password" type="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+    </div>
+  </div>
+
+  <div id="serialFields" style="display:none;">
+    <div class="sp-form-group">
+      <label>COM Port</label>
+      <input name="host" id="comHost" type="text" placeholder="COM3  或  /dev/ttyUSB0"
+        autocomplete="off" spellcheck="false">
+    </div>
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label>Baud Rate</label>
+        <select name="ssh_port" style="width:100%;padding:8px 10px;background:var(--te-bg3,#172d45);border:1px solid var(--te-border,#1e3a55);border-radius:4px;color:var(--te-text,#d0e8ff);font-size:13px;">
+          <option value="9600">9600</option>
+          <option value="38400">38400</option>
+          <option value="115200" selected>115200</option>
+          <option value="230400">230400</option>
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label>IPMI Port</label>
+        <input name="ipmi_port" type="number" placeholder="623" value="623">
+      </div>
+    </div>
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label>Username</label>
+        <input name="user" type="text" placeholder="root" autocomplete="off">
+      </div>
+      <div class="sp-form-group">
+        <label>Password</label>
+        <input name="password" type="password" placeholder="••••••••">
+      </div>
+    </div>
+  </div>
+
+  {% include '_connect_save_row.html' %}
+  <div class="sp-form-actions-row">
+    <button type="button" class="sp-btn sp-btn-secondary" id="spSaveNewProfileBtn">儲存 Profile</button>
+    <button type="submit" class="sp-connect-btn" id="connectBtn">Connect</button>
+  </div>
+</form>
