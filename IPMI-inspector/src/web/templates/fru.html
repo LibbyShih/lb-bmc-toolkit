@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}FRU · IPMI Inspector{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+  <div class="card-title">FRU — {{ bmc.host }}</div>
+  <button class="btn btn-ghost" onclick="exportFRU()">Export JSON</button>
+</div>
+<div id="fru-loading" class="loading">Loading FRU...</div>
+<div id="fru-error" class="error-msg" style="display:none;"></div>
+<div id="fru-content" style="display:none;"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+let fruData = null;
+const AREA_NAMES = {chassis_info:'Chassis Info', board_info:'Board Info', product_info:'Product Info'};
+fetch(window.IPMI_BASE + '/api/fru?id=0').then(r=>r.json()).then(data => {
+  document.getElementById('fru-loading').style.display = 'none';
+  if (!data.ok) { const el=document.getElementById('fru-error'); el.textContent=data.error; el.style.display=''; return; }
+  fruData = data;
+  const p = data.parsed || {};
+  let html = '';
+  ['chassis_info','board_info','product_info'].forEach(key => {
+    const area = p[key];
+    if (!area || typeof area !== 'object') return;
+    html += `<div class="card card-clickable" onclick="selectArea('${key}',this)">`;
+    html += `<div class="card-title">${AREA_NAMES[key]||key}</div>`;
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">';
+    for (const [k,v] of Object.entries(area)) {
+      if (typeof v === 'object') continue;
+      html += `<div style="background:var(--bg-raised);border-radius:4px;padding:6px 8px;">
+        <div style="font-size:10px;color:var(--text-muted);">${k.replace(/_/g,' ')}</div>
+        <div style="font-size:12px;">${v||'—'}</div></div>`;
+    }
+    html += '</div></div>';
+  });
+  if (p.multirecord) {
+    html += `<div class="card"><div class="card-title">Multi-Record Area</div>
+      <pre style="font-size:10px;color:var(--text-muted);overflow-x:auto;">${JSON.stringify(p.multirecord,null,2)}</pre></div>`;
+  }
+  document.getElementById('fru-content').innerHTML = html;
+  document.getElementById('fru-content').style.display = '';
+}).catch(err => {
+  document.getElementById('fru-loading').style.display = 'none';
+  const el=document.getElementById('fru-error'); el.textContent=''+err; el.style.display='';
+});
+
+function selectArea(key, el) {
+  document.querySelectorAll('.card-clickable').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateSpecPanel(`FRU — ${AREA_NAMES[key]||key}`, fruData?.annotation||null);
+}
+function exportFRU() {
+  if (!fruData) return;
+  const blob = new Blob([JSON.stringify(fruData.parsed,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='fru_export.json'; a.click();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.lock
+*.db
+.env
+.pytest_cache/
+pytest-cache-*/
+.superpowers/
+docs/superpowers/
+docs/PLAN.md
+scripts/
+worklog.md
+
+packaging/build/
+packaging/dist/*
+!packaging/dist/*.exe

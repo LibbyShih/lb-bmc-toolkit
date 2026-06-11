@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}SEL · IPMI Inspector{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+  <div class="card-title">SEL — {{ bmc.host }}</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-ghost" onclick="exportSEL()">Export JSON</button>
+    <button class="btn btn-ghost" onclick="loadSEL()">Refresh</button>
+  </div>
+</div>
+<div id="sel-loading" class="loading">Loading SEL...</div>
+<div id="sel-error" class="error-msg" style="display:none;"></div>
+<div id="sel-table" style="display:none;">
+  <table class="data-table">
+    <thead><tr>
+      <th>ID</th><th>Timestamp</th><th>Generator</th>
+      <th>Sensor Type</th><th>Sensor #</th><th>Direction</th><th>Event</th><th></th>
+    </tr></thead>
+    <tbody id="sel-tbody"></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selRecords = [];
+
+function loadSEL() {
+  document.getElementById('sel-loading').style.display = '';
+  document.getElementById('sel-table').style.display = 'none';
+  document.getElementById('sel-error').style.display = 'none';
+  fetch(window.IPMI_BASE + '/api/sel').then(r => r.json()).then(data => {
+    document.getElementById('sel-loading').style.display = 'none';
+    if (!data.ok) {
+      const el = document.getElementById('sel-error');
+      el.textContent = data.error; el.style.display = ''; return;
+    }
+    selRecords = data.records;
+    const tbody = document.getElementById('sel-tbody');
+    tbody.innerHTML = selRecords.map((r, i) => {
+      const ts = r.timestamp ? r.timestamp.replace('T',' ').replace('+00:00','Z') : '—';
+      const dir = r.event_direction === 'Assert'
+        ? '<span style="color:var(--crit);">⚠ Assert</span>'
+        : '<span style="color:var(--ok);">✓ Deassert</span>';
+      const sdrLink = r.sensor_number !== undefined
+        ? `<a href="/sdr?sensor=${r.sensor_number}" style="color:var(--accent);font-size:10px;" title="View in SDR">→SDR</a>` : '';
+      return `<tr onclick="selectSEL(${i})">
+        <td class="font-mono">0x${(r.record_id||0).toString(16).toUpperCase().padStart(4,'0')}</td>
+        <td style="font-size:11px;">${ts}</td>
+        <td style="font-size:11px;">${r.generator_addr||r.generator_type||'—'}</td>
+        <td>${r.sensor_type_name||'—'}</td>
+        <td class="font-mono">${r.sensor_number!==undefined?'0x'+r.sensor_number.toString(16).toUpperCase().padStart(2,'0'):'—'}</td>
+        <td>${dir}</td>
+        <td style="font-size:11px;">${r.event_name||'—'}</td>
+        <td>${sdrLink}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('sel-table').style.display = '';
+  }).catch(err => {
+    document.getElementById('sel-loading').style.display = 'none';
+    const el = document.getElementById('sel-error');
+    el.textContent = 'Fetch error: ' + err; el.style.display = '';
+  });
+}
+
+function selectSEL(i) {
+  document.querySelectorAll('#sel-tbody tr').forEach((tr, j) => {
+    tr.style.background = j === i ? 'var(--bg-raised)' : '';
+  });
+  const r = selRecords[i];
+  updateSpecPanel(`SEL Record 0x${(r.record_id||0).toString(16).toUpperCase().padStart(4,'0')}`, r.annotation || null);
+}
+
+function exportSEL() {
+  const blob = new Blob([JSON.stringify(selRecords, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'sel_export.json'; a.click();
+}
+
+loadSEL();
+</script>
+{% endblock %}

@@ -1,0 +1,5 @@
+pyghmi>=1.5.0
+rich>=13.0.0
+scapy>=2.5.0
+Flask>=3.0.0
+PyYAML>=6.0

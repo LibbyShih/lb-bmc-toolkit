@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPMI Inspector — Connect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/api/bmc_template/static/profile_manager.css?v=3.6">
+  <link rel="stylesheet" href="/api/bmc_template/static/app_shell.css?v=3.6">
+</head>
+<body>
+
+  {% set cp_show_shutdown = not shell_bar_ctx %}
+  {% set cp_error = error | default('') %}
+  {% set cp_accent   = 'IPMI' %}
+  {% set cp_name     = 'Inspector' %}
+  {% set cp_subtitle = 'BMC 診斷工具' %}
+  {% set cp_form_tpl = '_ipmi_form.html' %}
+  {% set cp_cards_id = 'ipmiProfileCards' %}
+  {% include '_connect_page.html' %}
+
+  <script src="/api/bmc_template/static/conn_display.js"></script>
+  <script src="/api/bmc_template/static/connection_test.js?v=3.9"></script>
+  <script src="/api/bmc_template/static/profile_manager.js?v=3.6"></script>
+  <script src="/api/bmc_template/static/service.js"></script>
+  <script>
+    window.IPMI_BASE = '{{ IPMI_BASE | default("") }}';
+    window.BMC_SERVICE_NAME = 'IPMI Inspector 服務';
+    window.SERVICE_SHUTDOWN_URL = '/api/service/shutdown';
+
+    let _allowFormSubmit = false;
+
+    function ipmiFormPayload(form) {
+      return {
+        host: (form.querySelector('[name="host"]').value || '').trim(),
+        port: parseInt(form.querySelector('[name="port"]').value, 10) || 623,
+        ipmi_port: parseInt(form.querySelector('[name="port"]').value, 10) || 623,
+        ssh_port: parseInt(form.querySelector('[name="ssh_port"]').value, 10) || 22,
+        user: (form.querySelector('[name="username"]').value || '').trim(),
+        password: form.querySelector('[name="password"]').value || '',
+        conn_type: 'ssh',
+      };
+    }
+
+    function loadIpmiProfile(p) {
+      const sshPort = p.ssh_port != null && p.ssh_port !== '' ? p.ssh_port : 22;
+      document.getElementById('cpHost').value     = p.host      || '';
+      document.getElementById('cpSshPort').value  = sshPort;
+      document.getElementById('cpIpmiPort').value = p.ipmi_port || 623;
+      document.getElementById('cpUser').value     = p.user      || '';
+      document.getElementById('cpPass').value     = p.password  || '';
+    }
+
+    function submitIpmiConnect(form) {
+      const btn = document.getElementById('connectBtn');
+      const payload = ipmiFormPayload(form);
+
+      if (!payload.host || !payload.user) {
+        showConnectError('Host and username are required');
+        return;
+      }
+
+      showConnectError('');
+      if (btn) {
+        btn.textContent = '連線中…';
+        btn.disabled = true;
+      }
+      _allowFormSubmit = true;
+      form.submit();
+    }
+
+    function connectFromProfile(p) {
+      showConnectError('');
+      loadIpmiProfile(p);
+      const form = document.getElementById('connect-form');
+      const payload = ipmiFormPayload(form);
+      if (!payload.host || !payload.user) {
+        const msg = 'Host and username are required';
+        showConnectError(msg);
+        throw new Error(msg);
+      }
+      pm.setActiveConnectLabel('連線中…');
+      _allowFormSubmit = true;
+      form.submit();
+    }
+
+    window.pm = new ProfileManager({ apiBase: '/api', toolMode: 'ipmi' });
+
+    function togglePass() {
+      const el = document.getElementById('cpPass');
+      el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
+    document.getElementById('connect-form').addEventListener('submit', function(e) {
+      if (_allowFormSubmit) {
+        _allowFormSubmit = false;
+        return;
+      }
+      e.preventDefault();
+      submitIpmiConnect(this);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      pm.initConnectPage({
+        cardsId: 'ipmiProfileCards',
+        onConnect: connectFromProfile,
+        collectProfileData: () => ipmiFormPayload(document.getElementById('connect-form')),
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}SDR · IPMI Inspector{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+  <div class="card-title">SDR Repository — {{ bmc.host }}</div>
+  <button class="btn btn-ghost" onclick="loadSDR()">Refresh</button>
+</div>
+<div id="sdr-loading" class="loading">Loading SDR...</div>
+<div id="sdr-error" class="error-msg" style="display:none;"></div>
+<div id="sdr-table" style="display:none;">
+  <table class="data-table">
+    <thead><tr><th>Record ID</th><th>Type</th><th>Entity</th><th>Name / Description</th><th>Sensor #</th></tr></thead>
+    <tbody id="sdr-tbody"></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let sdrRecords = [];
+function loadSDR() {
+  document.getElementById('sdr-loading').style.display = '';
+  document.getElementById('sdr-table').style.display = 'none';
+  fetch(window.IPMI_BASE + '/api/sdr').then(r => r.json()).then(data => {
+    document.getElementById('sdr-loading').style.display = 'none';
+    if (!data.ok) { const el=document.getElementById('sdr-error'); el.textContent=data.error; el.style.display=''; return; }
+    sdrRecords = data.records;
+    const tbody = document.getElementById('sdr-tbody');
+    tbody.innerHTML = sdrRecords.map((r, i) => `<tr onclick="selectSDR(${i})">
+      <td class="font-mono">0x${(r.record_id||0).toString(16).toUpperCase().padStart(4,'0')}</td>
+      <td style="font-size:11px;">${r.record_type_name||'—'}</td>
+      <td style="font-size:11px;">${r.entity_name||'—'}</td>
+      <td>${r.name||r.sensor_type_name||'—'}</td>
+      <td class="font-mono">${r.sensor_number!==undefined?'0x'+r.sensor_number.toString(16).toUpperCase().padStart(2,'0'):'—'}</td>
+    </tr>`).join('');
+    document.getElementById('sdr-table').style.display = '';
+    // Auto-scroll to sensor from ?sensor= query param
+    const params = new URLSearchParams(location.search);
+    const snum = params.get('sensor');
+    if (snum !== null) {
+      const idx = sdrRecords.findIndex(r => r.sensor_number === parseInt(snum));
+      if (idx >= 0) { selectSDR(idx); document.querySelectorAll('#sdr-tbody tr')[idx]?.scrollIntoView({block:'center'}); }
+    }
+  }).catch(err => { document.getElementById('sdr-loading').style.display='none'; const el=document.getElementById('sdr-error'); el.textContent=''+err; el.style.display=''; });
+}
+function selectSDR(i) {
+  document.querySelectorAll('#sdr-tbody tr').forEach((tr,j) => tr.style.background = j===i?'var(--bg-raised)':'');
+  const r = sdrRecords[i];
+  updateSpecPanel(`SDR 0x${(r.record_id||0).toString(16).toUpperCase().padStart(4,'0')} — ${r.record_type_name||''}`, r.annotation||null);
+}
+loadSDR();
+</script>
+{% endblock %}

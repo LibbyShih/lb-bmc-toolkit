@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Sensors · IPMI Inspector{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+  <div class="card-title">Sensors — {{ bmc.host }}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;" id="sensor-filters">
+    <button class="btn btn-primary" data-cat="all"   onclick="setFilter('all',this)">All</button>
+    <button class="btn btn-ghost"   data-cat="temp"  onclick="setFilter('temp',this)">Temperature</button>
+    <button class="btn btn-ghost"   data-cat="volt"  onclick="setFilter('volt',this)">Voltage</button>
+    <button class="btn btn-ghost"   data-cat="fan"   onclick="setFilter('fan',this)">Fan</button>
+    <button class="btn btn-ghost"   data-cat="power" onclick="setFilter('power',this)">Power</button>
+    <button class="btn btn-ghost"   data-cat="other" onclick="setFilter('other',this)">Other</button>
+  </div>
+</div>
+<div id="s-loading" class="loading">Loading sensors...</div>
+<div id="s-error" class="error-msg" style="display:none;"></div>
+<div id="s-grid" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allSensors = [];
+let activeFilter = 'all';
+
+function classify(name, units) {
+  const n = (name + ' ' + (units||'')).toLowerCase();
+  if (n.match(/temp|thermal|inlet|outlet|°c|celsius/)) return 'temp';
+  if (n.match(/volt|vcc|vdd|vsb|\dv\b/))               return 'volt';
+  if (n.match(/fan|rpm|tach/))                          return 'fan';
+  if (n.match(/power|watt|pwr/))                        return 'power';
+  return 'other';
+}
+
+function healthClass(h) {
+  if (h === 0) return 'badge-ok';
+  if (h === 1) return 'badge-unc';
+  if (h === 2) return 'badge-ucr';
+  return 'badge-unr';
+}
+
+function renderSensors() {
+  const filtered = activeFilter === 'all'
+    ? allSensors
+    : allSensors.filter(s => classify(s.name, s.units) === activeFilter);
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;">';
+  filtered.forEach((s, i) => {
+    const realIdx = allSensors.indexOf(s);
+    const hcls = healthClass(s.health);
+    const val = s.value !== null && s.value !== undefined ? `${s.value} ${s.units||''}` : '—';
+    const status = (s.states && s.states[0]) ? s.states[0] : (s.health === 0 ? 'ok' : 'error');
+    html += `<div class="card card-clickable" data-i="${realIdx}" onclick="selectSensor(${realIdx})">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${s.name}</div>
+      <div style="font-size:20px;font-family:var(--font-mono);font-weight:600;margin-bottom:4px;">${val}</div>
+      <span class="badge ${hcls}">${status}</span>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('s-grid').innerHTML = html;
+  document.getElementById('s-grid').style.display = '';
+}
+
+function setFilter(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('#sensor-filters .btn').forEach(b => {
+    b.classList.remove('btn-primary'); b.classList.add('btn-ghost');
+  });
+  btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary');
+  renderSensors();
+}
+
+function selectSensor(i) {
+  document.querySelectorAll('.card-clickable').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.card-clickable[data-i="${i}"]`)?.classList.add('selected');
+  const s = allSensors[i];
+  updateSpecPanel(`${s.name} — Sensor Reading`, s.sdr_annotation || null);
+}
+
+fetch(window.IPMI_BASE + '/api/sensors').then(r => r.json()).then(data => {
+  document.getElementById('s-loading').style.display = 'none';
+  if (!data.ok) {
+    const el = document.getElementById('s-error');
+    el.textContent = data.error; el.style.display = ''; return;
+  }
+  allSensors = data.sensors;
+  renderSensors();
+}).catch(err => {
+  document.getElementById('s-loading').style.display = 'none';
+  const el = document.getElementById('s-error');
+  el.textContent = 'Fetch error: ' + err; el.style.display = '';
+});
+</script>
+{% endblock %}

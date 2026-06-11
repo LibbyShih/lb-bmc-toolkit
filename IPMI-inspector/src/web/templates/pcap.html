@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}PCAP · IPMI Inspector{% endblock %}
+{% block content %}
+<div class="card-title" style="margin-bottom:12px;">PCAP Analysis</div>
+<div class="form-group">
+  <label>Upload .pcap or .pcapng file</label>
+  <input type="file" id="pcap-file" accept=".pcap,.pcapng" onchange="uploadPCAP(this)">
+</div>
+<div id="pcap-loading" class="loading" style="display:none;">Parsing...</div>
+<div id="pcap-error" class="error-msg" style="display:none;"></div>
+<div id="pcap-table" style="display:none;">
+  <table class="data-table">
+    <thead><tr><th>#</th><th>Time</th><th>Src</th><th>Dst</th><th>Type</th><th>Summary</th></tr></thead>
+    <tbody id="pcap-tbody"></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let packets = [];
+function uploadPCAP(input) {
+  const f = input.files[0]; if (!f) return;
+  document.getElementById('pcap-loading').style.display = '';
+  document.getElementById('pcap-table').style.display = 'none';
+  const fd = new FormData(); fd.append('file', f);
+  fetch(window.IPMI_BASE + '/api/pcap', {method:'POST', body:fd}).then(r=>r.json()).then(data => {
+    document.getElementById('pcap-loading').style.display = 'none';
+    if (!data.ok) { const el=document.getElementById('pcap-error'); el.textContent=data.error; el.style.display=''; return; }
+    packets = data.packets;
+    const tbody = document.getElementById('pcap-tbody');
+    tbody.innerHTML = packets.map((p,i) => `<tr onclick="selectPkt(${i})">
+      <td>${i+1}</td>
+      <td style="font-size:10px;">${p.timestamp||'—'}</td>
+      <td class="font-mono" style="font-size:10px;">${p.src||'—'}</td>
+      <td class="font-mono" style="font-size:10px;">${p.dst||'—'}</td>
+      <td style="font-size:10px;">${p.type||'—'}</td>
+      <td style="font-size:11px;">${p.summary||''}</td>
+    </tr>`).join('');
+    document.getElementById('pcap-table').style.display = '';
+  }).catch(err => { document.getElementById('pcap-loading').style.display='none'; const el=document.getElementById('pcap-error'); el.textContent=''+err; el.style.display=''; });
+}
+function selectPkt(i) {
+  document.querySelectorAll('#pcap-tbody tr').forEach((tr,j) => tr.style.background=j===i?'var(--bg-raised)':'');
+  updateSpecPanel(`Packet #${i+1}`, packets[i].annotation||null);
+}
+</script>
+{% endblock %}

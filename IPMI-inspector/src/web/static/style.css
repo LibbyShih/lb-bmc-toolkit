@@ -1,0 +1,182 @@
+/* ── Reset & Variables ─────────────────────────────────────── */
+@import 'tokens.css';
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Mapped to shared tokens */
+  --bg-base:    var(--te-bg);
+  --bg-surface: var(--te-bg2);
+  --bg-raised:  var(--te-bg3);
+  --border:     var(--te-border);
+  --border-hi:  var(--te-border-2);
+  --text:       var(--te-text);
+  --text-dim:   var(--te-text-dim);
+  --text-muted: var(--te-text-mut);
+  --accent:     var(--te-accent);
+  --accent-dim: #1e3a5f;
+  --ok:         var(--te-green);
+  --warn:       var(--te-yellow);
+  --crit:       #f97316;
+  --danger:     #ef4444;
+  --font-mono:  var(--te-font-mono);
+  --font-ui:    var(--te-font);
+  --radius-sm:  4px;
+  --radius-md:  var(--te-radius);
+}
+
+body { font-family: var(--font-ui); background: var(--bg-base); color: var(--text); font-size: 14px; }
+
+/* ── Navigation tabs ───────────────────────────────────────── */
+.nav-tabs {
+  display: flex; justify-content: space-between;
+  background: #0f1a2e; border-bottom: 1px solid var(--border);
+  padding: 0 16px; overflow-x: auto;
+}
+.nav-left, .nav-right { display: flex; }
+.nav-item {
+  padding: 9px 14px; font-size: 12px; font-weight: 500;
+  color: var(--text-muted); text-decoration: none; white-space: nowrap;
+  border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+}
+.nav-item:hover  { color: var(--text); }
+.nav-item.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Main dual-column layout ───────────────────────────────── */
+.main-layout {
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  min-height: calc(100vh - 88px);
+}
+.data-pane  { padding: 16px; overflow-y: auto; border-right: 1px solid var(--border); }
+.spec-pane  { background: #0d1520; display: flex; flex-direction: column; }
+.spec-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; color: var(--warn); letter-spacing: .5px;
+}
+.spec-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+.spec-close:hover { color: var(--text); }
+.spec-body  { padding: 12px; flex: 1; overflow-y: auto; }
+.spec-placeholder { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--text-muted); font-size: 12px; text-align: center; }
+
+/* ── Hex annotation colours ────────────────────────────────── */
+.hex-dump { font-family: var(--font-mono); font-size: 12px; line-height: 2.2; margin-bottom: 12px; word-break: break-all; }
+.hex-field { display: inline-block; padding: 1px 5px; border-radius: 3px; cursor: default; margin: 1px; }
+.hex-unmatched { color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; }
+
+/* Palette for hex fields and swatches */
+.color-0 { background-color: #1e3a8a; color: #fff; } /* blue */
+.color-1 { background-color: #065f46; color: #fff; } /* emerald */
+.color-2 { background-color: #701a75; color: #fff; } /* fuchsia */
+.color-3 { background-color: #9a3412; color: #fff; } /* orange */
+.color-4 { background-color: #312e81; color: #fff; } /* indigo */
+.color-5 { background-color: #831843; color: #fff; } /* rose */
+.color-6 { background-color: #0f766e; color: #fff; } /* teal */
+.color-7 { background-color: #3f6212; color: #fff; } /* lime */
+.color-8 { background-color: #1e40af; color: #fff; }
+.color-9 { background-color: #115e59; color: #fff; }
+.color-10 { background-color: #86198f; color: #fff; }
+.color-11 { background-color: #c2410c; color: #fff; }
+.color-12 { background-color: #3730a3; color: #fff; }
+.color-13 { background-color: #9f1239; color: #fff; }
+.color-14 { background-color: #0d9488; color: #fff; }
+.color-15 { background-color: #4d7c0f; color: #fff; }
+
+
+.hex-legend ul { list-style: none; font-size: 11px; }
+.hex-legend li { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; line-height: 1.4; }
+.color-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Cards / Tables ─────────────────────────────────────────── */
+.card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; }
+.card-title { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: .5px; margin-bottom: 8px; text-transform: uppercase; }
+.card-clickable { cursor: pointer; transition: border-color .15s; }
+.card-clickable:hover { border-color: var(--accent); }
+.card-clickable.selected { border-color: var(--accent); background: #0f1e35; }
+
+table.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.data-table th { padding: 6px 8px; text-align: left; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+table.data-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.data-table tr:hover td { background: var(--bg-raised); cursor: pointer; }
+
+/* ── Status badges ─────────────────────────────────────────── */
+.badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge-ok   { background: #1a3a1a; color: var(--ok); }
+.badge-unc  { background: #3a3a1a; color: var(--warn); }
+.badge-ucr  { background: #3a2a10; color: var(--crit); }
+.badge-unr  { background: #3a1a1a; color: var(--danger); }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn { padding: 6px 14px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn-primary { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+.btn-danger  { background: #3a1a1a; color: var(--danger); border: 1px solid var(--danger); }
+.btn-ghost   { background: transparent; color: var(--text-dim); border: 1px solid var(--border-hi); }
+
+/* ── Forms ─────────────────────────────────────────────────── */
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+input, select, textarea {
+  width: 100%; padding: 7px 10px; background: var(--bg-raised);
+  border: 1px solid var(--border-hi); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 13px; font-family: var(--font-ui);
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+.font-mono { font-family: var(--font-mono) !important; }
+
+/* ── Error / empty states ──────────────────────────────────── */
+.error-msg { background: #3a1a1a; border: 1px solid var(--danger); color: #fca5a5; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; margin-bottom: 10px; }
+.loading { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
+.empty-state { color: var(--text-muted); text-align: center; padding: 40px 0; font-size: 13px; }
+
+/* ── Spec Ref page (full command tree) ───────────────────────── */
+.spec-ref-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 12px;
+  height: calc(100vh - 148px);
+  min-height: 280px;
+  max-height: calc(100vh - 148px);
+}
+.spec-ref-tree,
+.spec-ref-detail {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.spec-tree-group { margin-bottom: 6px; }
+.spec-tree-netfn {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 4px 6px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 3px;
+}
+.spec-tree-netfn:hover { background: var(--bg-raised); }
+.spec-tree-cmd {
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spec-tree-cmd:hover { background: var(--bg-raised); }
+
+/* ── RWD: Spec pane becomes bottom drawer < 1200px ─────────── */
+@media (max-width: 1200px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .spec-pane {
+    position: fixed; bottom: 0; left: 0; right: 0; max-height: 45vh;
+    border-top: 2px solid var(--accent); z-index: 50;
+    transform: translateY(100%); transition: transform .25s ease;
+  }
+  .spec-pane.open { transform: translateY(0); }
+  .data-pane { border-right: none; }
+}

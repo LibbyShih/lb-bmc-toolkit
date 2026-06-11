@@ -1,0 +1,60 @@
+{#
+  Unified in-app header for BMC tools (hub + standalone).
+
+  Hub mode — shell_bar_ctx from ToolEntry context processor.
+  Standalone — set before include:
+    ih_tool_name    str   HTML tool title (default: tool_display_name)
+    ih_conn         dict  connection fields for format_conn_host filter
+    ih_home_url     str   optional home/disconnect URL
+    ih_home_label   str   default '首頁'
+    ih_show_shutdown bool  show exit-service button
+#}
+<link rel="stylesheet" href="/api/bmc_template/static/app_shell.css">
+
+{% if shell_bar_ctx %}
+<header class="bt-shell-bar">
+  <a href="/dashboard" class="bt-hub-logo">ToolEntry</a>
+  <span class="bt-sep">›</span>
+  <span class="bt-tool-name">{{ shell_bar_ctx.tool_name | safe }}</span>
+  <div class="bt-conn-chip">
+    <span class="bt-dot {{ 'ok' if shell_bar_ctx.ssh_ok else 'warn' }}"></span>
+    {% if shell_bar_ctx.conn_badge %}
+    <span class="bt-conn-badge{% if shell_bar_ctx.conn_badge == 'COM' %} bt-conn-badge--com{% endif %}">{{ shell_bar_ctx.conn_badge }}</span>
+    {% endif %}
+    <span class="bt-host">{{ shell_bar_ctx.conn_host }}</span>
+  </div>
+  <div class="bt-header-actions">
+    <button type="button" class="bt-header-btn danger" onclick="shutdownToolService(window.BMC_SERVICE_NAME || 'BMC ToolEntry 服務')">✕ 結束服務</button>
+  </div>
+</header>
+
+{% elif ih_tool_name is defined %}
+<header class="bt-shell-bar" id="btShellBar">
+  <span class="bt-tool-name">{{ ih_tool_name | safe }}</span>
+  <div class="bt-conn-chip" id="btShellConnChip">
+    {% if ih_conn is defined and ih_conn %}
+    <span class="bt-dot ok" id="btShellConnDot"></span>
+    {% set _badge = ih_conn | conn_type_badge %}
+    {% if _badge %}
+    <span class="bt-conn-badge{% if _badge == 'COM' %} bt-conn-badge--com{% elif _badge == 'IPMI' %} bt-conn-badge--ipmi{% endif %}" id="btShellConnBadge">{{ _badge }}</span>
+    {% else %}
+    <span class="bt-conn-badge" id="btShellConnBadge" hidden></span>
+    {% endif %}
+    <span class="bt-host" id="btShellConnHost">{{ ih_conn | format_conn_host }}</span>
+    {% else %}
+    <span class="bt-dot off" id="btShellConnDot"></span>
+    <span class="bt-conn-badge" id="btShellConnBadge" hidden></span>
+    <span class="bt-host" id="btShellConnHost">未連線</span>
+    {% endif %}
+  </div>
+  <div class="bt-header-actions">
+    {% if ih_home_url %}
+    <a href="{{ ih_home_url }}" class="bt-header-btn">{{ ih_home_label | default('首頁') }}</a>
+    {% endif %}
+    {% if ih_show_shutdown %}
+    <button type="button" class="bt-header-btn danger" onclick="shutdownToolService(window.BMC_SERVICE_NAME)">✕ 結束服務</button>
+    {% endif %}
+    {% block ih_extra_actions %}{% endblock %}
+  </div>
+</header>
+{% endif %}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IPMI Inspector{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for(_static_ep, filename='style.css') }}?v=3.4">
+    <link rel="stylesheet" href="/api/bmc_template/static/app_shell.css?v=3.4">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% set is_connect = (request.endpoint or '') | replace('ipmi.', '') == 'index' %}
+
+    {% if not is_connect %}
+      {% if not shell_bar_ctx %}
+        {% set ih_tool_name = tool_display_name('ipmi') %}
+        {% if bmc %}
+          {% set ih_conn = {'host': bmc.host, 'port': bmc.port, 'user': bmc.username, 'ipmi_only': true} %}
+          {% set ih_home_url = url_for(_ep_prefix ~ 'disconnect') %}
+          {% set ih_home_label = 'Disconnect' %}
+        {% endif %}
+        {% set ih_show_shutdown = true %}
+      {% endif %}
+      {% include '_inner_header.html' %}
+    {% endif %}
+
+    {% if not is_connect %}
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <div class="nav-left">
+            <a href="{{ url_for(_ep_prefix ~ 'overview_page') }}"  class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'overview_page'  %}active{% endif %}">Overview</a>
+            <a href="{{ url_for(_ep_prefix ~ 'sensors') }}"        class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'sensors'         %}active{% endif %}">Sensors</a>
+            <a href="{{ url_for(_ep_prefix ~ 'sel_page') }}"       class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'sel_page'         %}active{% endif %}">SEL</a>
+            <a href="{{ url_for(_ep_prefix ~ 'sdr_page') }}"       class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'sdr_page'         %}active{% endif %}">SDR</a>
+            <a href="{{ url_for(_ep_prefix ~ 'fru_page') }}"       class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'fru_page'         %}active{% endif %}">FRU</a>
+            <a href="{{ url_for(_ep_prefix ~ 'raw_page') }}"       class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'raw_page'         %}active{% endif %}">Raw</a>
+            <a href="{{ url_for(_ep_prefix ~ 'pcap_page') }}"      class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'pcap_page'        %}active{% endif %}">PCAP</a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for(_ep_prefix ~ 'spec_ref_page') }}"  class="nav-item {% if (request.endpoint or '') | replace('ipmi.','') == 'spec_ref_page'   %}active{% endif %}">Spec Ref</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Dual-Column Layout -->
+    <main class="main-layout" {% if is_connect %}style="display:block; min-height:100vh;"{% endif %}>
+        <!-- Data Pane (60%) -->
+        <section class="data-pane" {% if is_connect %}style="border:none; padding:0;"{% endif %}>
+            {% block content %}{% endblock %}
+        </section>
+
+        {% if not is_connect %}
+        <!-- Spec Pane (40%) -->
+        <aside class="spec-pane" id="spec-pane">
+            <div class="spec-header">
+                <span id="spec-title">◈ SPEC 解析</span>
+                <button class="spec-close" onclick="clearSpecPanel()" title="Close">✕</button>
+            </div>
+            <div class="spec-body" id="spec-content">
+                <div class="spec-placeholder"><p>點任何資料項目查看 Spec 解析</p></div>
+            </div>
+        </aside>
+        {% endif %}
+    </main>
+
+    <script src="/api/bmc_template/static/service.js"></script>
+    <script>
+      window.BMC_SERVICE_NAME = {% if shell_bar_ctx %}'BMC ToolEntry 服務'{% else %}'IPMI Inspector 服務'{% endif %};
+      window.SERVICE_SHUTDOWN_URL = '/api/service/shutdown';
+    </script>
+
+    <script>window.IPMI_BASE = '{{ IPMI_BASE | default("") }}';</script>
+    <script src="{{ url_for(_static_ep, filename='app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

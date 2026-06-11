@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Raw Command · IPMI Inspector{% endblock %}
+
+{% block content %}
+<div class="card-title" style="margin-bottom:12px;">Raw IPMI Command</div>
+
+<div class="form-group">
+  <label>Search Command (keyword)</label>
+  <input id="cmd-search" class="font-mono" placeholder="e.g. chassis power, sensor reading, watchdog..."
+         oninput="onSearch(this.value)" autocomplete="off">
+  <div id="search-results" style="display:none;background:var(--bg-raised);border:1px solid var(--border-hi);border-top:none;border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto;"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+  <div class="form-group" style="margin:0;">
+    <label>NetFn (hex)</label>
+    <input id="inp-netfn" class="font-mono" placeholder="0x06" value="0x06" oninput="onCmdChange()">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <label>Command (hex)</label>
+    <input id="inp-cmd" class="font-mono" placeholder="0x01" value="0x01" oninput="onCmdChange()">
+  </div>
+</div>
+
+<div id="cmd-desc" style="font-size:11px;color:var(--text-muted);margin-bottom:10px;min-height:14px;"></div>
+<div id="req-fields" style="margin-bottom:10px;"></div>
+
+<div class="form-group">
+  <label>Raw Data (hex bytes, space-separated) — overrides structured fields above</label>
+  <input id="inp-data" class="font-mono" placeholder="00 01 02 ...">
+</div>
+
+<button class="btn btn-primary" onclick="sendCommand()" style="width:100%;padding:10px;margin-bottom:16px;">▶ Send Command</button>
+
+<div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <span style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.5px;">HISTORY</span>
+    <button class="btn btn-ghost" style="font-size:10px;" onclick="clearHistory()">Clear</button>
+  </div>
+  <div id="history-list" style="font-size:11px;color:var(--text-muted);">No commands sent yet.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cmdHistory = [];
+let searchTimer = null;
+
+function onSearch(q) {
+  clearTimeout(searchTimer);
+  const el = document.getElementById('search-results');
+  if (!q.trim()) { el.style.display = 'none'; return; }
+  searchTimer = setTimeout(() => {
+    fetch(window.IPMI_BASE + '/api/search/commands?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => {
+        if (!data.results || !data.results.length) { el.style.display = 'none'; return; }
+        el.innerHTML = data.results.map(r =>
+          `<div style="padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--border);"
+                onmousedown="selectCmd('${r.netfn_hex}','${r.cmd_hex}',${JSON.stringify(r.name)},${JSON.stringify(r.desc)})">
+            <strong>${r.name}</strong>
+            <span style="float:right;color:var(--text-muted);font-family:var(--font-mono);font-size:10px;">${r.netfn_hex} / ${r.cmd_hex}</span>
+            <div style="font-size:10px;color:var(--text-muted);">${r.desc}</div>
+          </div>`).join('');
+        el.style.display = '';
+      });
+  }, 200);
+}
+
+function selectCmd(netfn, cmd, name, desc) {
+  document.getElementById('inp-netfn').value = netfn;
+  document.getElementById('inp-cmd').value = cmd;
+  document.getElementById('cmd-search').value = name;
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('cmd-desc').textContent = desc;
+  loadRequestSchema();
+}
+
+function onCmdChange() {
+  document.getElementById('cmd-desc').textContent = '';
+  loadRequestSchema();
+}
+
+function loadRequestSchema() {
+  const netfn = document.getElementById('inp-netfn').value.trim();
+  const cmd = document.getElementById('inp-cmd').value.trim();
+  if (!netfn || !cmd) return;
+  fetch(`${window.IPMI_BASE}/api/spec/request-schema?netfn=${netfn}&cmd=${cmd}`)
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('req-fields');
+      if (!data.ok || !data.fields || !data.fields.length) { el.innerHTML = ''; return; }
+      let html = '<div style="background:var(--bg-raised);border:1px solid var(--border-hi);border-radius:4px;padding:10px;margin-bottom:8px;">';
+      html += '<div style="font-size:10px;font-weight:600;color:var(--accent);margin-bottom:8px;letter-spacing:.5px;">REQUEST FIELDS</div>';
+      data.fields.forEach((f, i) => {
+        html += `<div style="margin-bottom:8px;"><label style="font-size:10px;color:var(--text-muted);">${f.name} <span style="color:var(--text-muted);">(${f.length} byte${f.length>1?'s':''})</span></label>`;
+        if (f.type === 'enum' && f.options && Object.keys(f.options).length) {
+          html += `<select id="rf-${i}" class="font-mono" style="margin-top:3px;">`;
+          for (const [v, l] of Object.entries(f.options)) {
+            const hex = '0x'+parseInt(v).toString(16).padStart(2,'0').toUpperCase();
+            html += `<option value="${hex}">${l} (${hex})</option>`;
+          }
+          html += '</select>';
+        } else {
+          html += `<input id="rf-${i}" class="font-mono" placeholder="${f.default||'0x00'}" value="${f.default||''}" style="margin-top:3px;">`;
+        }
+        html += `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${f.desc}</div></div>`;
+      });
+      html += `<button class="btn btn-ghost" style="font-size:10px;" onclick="buildHex(${JSON.stringify(data.fields)})">⚙ Generate Raw Hex</button>`;
+      html += '</div>';
+      el.innerHTML = html;
+    });
+}
+
+function buildHex(fields) {
+  const parts = [];
+  fields.forEach((f, i) => {
+    const el = document.getElementById(`rf-${i}`);
+    if (!el) return;
+    const val = el.value.trim() || '00';
+    const n = parseInt(val, val.startsWith('0x')||val.startsWith('0X') ? 16 : 10);
+    for (let b = 0; b < f.length; b++) {
+      parts.push(((n >> (b * 8)) & 0xFF).toString(16).padStart(2,'0').toUpperCase());
+    }
+  });
+  document.getElementById('inp-data').value = parts.join(' ');
+}
+
+function sendCommand() {
+  const netfn = document.getElementById('inp-netfn').value.trim();
+  const cmd   = document.getElementById('inp-cmd').value.trim();
+  const data  = document.getElementById('inp-data').value.trim();
+  if (!netfn || !cmd) { alert('NetFn and Command are required'); return; }
+  fetch(window.IPMI_BASE + '/api/raw', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({netfn, cmd, data})
+  }).then(r => r.json()).then(resp => {
+    cmdHistory.unshift({netfn, cmd, data, resp, ts: new Date().toLocaleTimeString()});
+    renderHistory();
+    const title = `${resp.netfn_name||netfn} / ${resp.cmd_name||cmd}`;
+    if (resp.annotation) {
+      updateSpecPanel(title, resp.annotation);
+    } else {
+      const contentDiv = document.getElementById('spec-content');
+      if (contentDiv) {
+        const cc = resp.completion_code;
+        const ok = cc === 0;
+        contentDiv.innerHTML = `
+          <div style="margin-bottom:12px;">
+            <span class="badge ${ok?'badge-ok':'badge-unr'}">CC 0x${(cc||0).toString(16).toUpperCase().padStart(2,'0')} — ${resp.completion_code_desc||''}</span>
+          </div>
+          <div class="hex-dump font-mono">${resp.raw_hex||'(no data)'}</div>`;
+        openSpecPanel();
+        const titleEl = document.getElementById('spec-title');
+        if (titleEl) titleEl.textContent = '📋 SPEC — ' + title;
+      }
+    }
+  }).catch(err => alert('Error: ' + err));
+}
+
+function renderHistory() {
+  if (!cmdHistory.length) { document.getElementById('history-list').textContent = 'No commands sent yet.'; return; }
+  document.getElementById('history-list').innerHTML = cmdHistory.slice(0, 20).map((e, i) =>
+    `<div style="padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="replayHistory(${i})">
+      <span class="font-mono" style="color:var(--accent);">${e.netfn} ${e.cmd}</span>
+      <span style="color:var(--text-muted);"> ${e.data||'(no data)'}</span>
+      <span style="float:right;color:var(--text-muted);font-size:10px;">${e.ts}</span>
+      <div style="font-size:10px;color:${e.resp.ok?'var(--ok)':'var(--danger)'};">
+        ${e.resp.cmd_name||''} — ${e.resp.completion_code_desc||e.resp.error||''}
+      </div>
+    </div>`
+  ).join('');
+}
+
+function replayHistory(i) {
+  const e = cmdHistory[i];
+  document.getElementById('inp-netfn').value = e.netfn;
+  document.getElementById('inp-cmd').value = e.cmd;
+  document.getElementById('inp-data').value = e.data;
+}
+
+function clearHistory() { cmdHistory = []; renderHistory(); }
+</script>
+{% endblock %}

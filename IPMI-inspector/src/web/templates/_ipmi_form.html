@@ -1,0 +1,42 @@
+{# IPMI connect form — IPMI over LAN #}
+<form action="{{ url_for(_ep_prefix ~ 'connect') }}" method="POST" id="connect-form">
+  <div class="sp-form-group">
+    <label>BMC IP / Hostname</label>
+    <input type="text" name="host" id="cpHost" placeholder="192.168.1.100"
+      required autocomplete="off" spellcheck="false"
+      value="{{ request.form.get('host', '') }}">
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>SSH Port</label>
+      <input type="number" name="ssh_port" id="cpSshPort" placeholder="22"
+        value="{{ request.form.get('ssh_port', '22') }}" min="1" max="65535">
+    </div>
+    <div class="sp-form-group">
+      <label>IPMI Port</label>
+      <input type="number" name="port" id="cpIpmiPort" placeholder="623"
+        value="{{ request.form.get('port', '623') }}" min="1" max="65535">
+    </div>
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>Username</label>
+      <input type="text" name="username" id="cpUser" placeholder="admin"
+        required autocomplete="username"
+        value="{{ request.form.get('username', 'admin') }}">
+    </div>
+    <div class="sp-form-group">
+      <label>Password</label>
+      <div class="sp-pass-wrap">
+        <input type="password" name="password" id="cpPass"
+          placeholder="••••••••" autocomplete="current-password">
+        <button type="button" class="sp-pass-toggle" onclick="togglePass()" title="顯示密碼">👁</button>
+      </div>
+    </div>
+  </div>
+  {% include '_connect_save_row.html' %}
+  <div class="sp-form-actions-row">
+    <button type="button" class="sp-btn sp-btn-secondary" id="spSaveNewProfileBtn">儲存 Profile</button>
+    <button type="submit" class="sp-connect-btn" id="connectBtn">Connect</button>
+  </div>
+</form>

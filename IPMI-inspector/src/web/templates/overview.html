@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Overview · IPMI Inspector{% endblock %}
+
+{% block content %}
+<div class="card-title">Device Overview — {{ bmc.host }}</div>
+<div id="ov-loading" class="loading">Loading BMC overview...</div>
+<div id="ov-error" class="error-msg" style="display:none;"></div>
+<div id="ov-content" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const OV_LABELS = {
+  device_id: "Get Device ID",
+  chassis_status: "Get Chassis Status",
+  self_test: "Get Self Test Results",
+};
+
+fetch(window.IPMI_BASE + '/api/overview').then(r => r.json()).then(data => {
+  document.getElementById('ov-loading').style.display = 'none';
+  if (!data.ok) {
+    const el = document.getElementById('ov-error');
+    el.textContent = data.error; el.style.display = '';
+    return;
+  }
+  let html = '';
+  for (const [key, result] of Object.entries(data.overview)) {
+    const label = OV_LABELS[key] || key;
+    html += `<div class="card card-clickable" onclick="selectOv(this,'${label}',${JSON.stringify(result.annotation || null)})">`;
+    html += `<div class="card-title">${label}</div>`;
+    if (result.ok) {
+      const hexStr = (result.data || []).map(b => b.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+      html += `<div class="font-mono" style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">${hexStr}</div>`;
+      if (result.annotation && result.annotation.fields && result.annotation.fields.length) {
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+        result.annotation.fields.forEach(f => {
+          html += `<div style="background:var(--bg-raised);border-radius:4px;padding:6px 8px;">
+            <div style="font-size:10px;color:var(--text-muted);">${f.name}</div>
+            <div style="font-size:12px;font-family:var(--font-mono);">${f.decoded}</div>
+          </div>`;
+        });
+        html += '</div>';
+      }
+    } else {
+      html += `<div class="error-msg">${result.error}</div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('ov-content').innerHTML = html;
+  document.getElementById('ov-content').style.display = '';
+}).catch(err => {
+  document.getElementById('ov-loading').style.display = 'none';
+  const el = document.getElementById('ov-error');
+  el.textContent = 'Fetch error: ' + err; el.style.display = '';
+});
+
+function selectOv(el, title, annotation) {
+  document.querySelectorAll('.card-clickable').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateSpecPanel(title, annotation);
+}
+</script>
+{% endblock %}

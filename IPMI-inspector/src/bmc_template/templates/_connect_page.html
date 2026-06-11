@@ -1,0 +1,70 @@
+{#
+  公版 Connect Page — 左：新連線表單 + 儲存 Profile；右：Load Profiles + Open
+
+  Required:
+    cp_accent, cp_name, cp_subtitle, cp_form_tpl, cp_cards_id
+  Optional:
+    cp_error, cp_show_shutdown, cp_features, cp_steps
+#}
+<div class="sp-connect-page-root">
+  {% if cp_show_shutdown %}
+  <button type="button" class="bt-shutdown-fab" onclick="shutdownToolService(window.BMC_SERVICE_NAME)">✕ 結束服務</button>
+  {% endif %}
+  <div class="sp-connect-wrap">
+
+    <header class="sp-connect-header">
+      <div class="sp-connect-logo"><span class="sp-logo-accent">{{ cp_accent }}</span>{{ cp_name }}</div>
+      <div class="sp-connect-subtitle">{{ cp_subtitle }}</div>
+    </header>
+
+    <div class="sp-main-row">
+      <div class="sp-connect-card">
+        <div id="connectError" class="sp-connect-error"{% if not cp_error | default('') %} style="display:none"{% endif %}>{{ cp_error | default('') }}</div>
+        {% include cp_form_tpl %}
+      </div>
+
+      <aside class="sp-connect-profiles">
+        <div class="sp-profiles-header">
+          <div class="sp-profiles-top">
+            <span class="sp-profiles-label">Load Profiles</span>
+            <div class="sp-profiles-actions">
+              <button type="button" onclick="pm.cmdOpenDb()">📂 Open</button>
+            </div>
+          </div>
+          <div class="sp-profiles-db" id="spProfilesDb" title="">載入中…</div>
+        </div>
+        <div class="profile-cards" id="{{ cp_cards_id }}"></div>
+      </aside>
+    </div>
+
+    {% if cp_features or cp_steps %}
+    <div class="sp-connect-extra">
+      {% if cp_features %}
+      <div class="sp-desc-section">
+        <div class="sp-desc-sec-title">功能特色</div>
+        <div class="sp-feature-grid">
+          {% for feat in cp_features %}
+          <div class="sp-feature-item"><span class="sp-feature-icon">{{ feat.icon }}</span>{{ feat.text }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if cp_steps %}
+      <div class="sp-desc-section">
+        <div class="sp-desc-sec-title">開始使用</div>
+        <ol class="sp-steps">
+          {% for step in cp_steps %}
+          <li>
+            <div class="sp-step-num">{{ loop.index }}</div>
+            <div class="sp-step-text">{{ step | safe }}</div>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
