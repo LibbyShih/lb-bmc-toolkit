@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CommandWebGUI — OpenBMC 開發輔助工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('cwg.static', filename='style.css') }}?v=3.6">
+  <link rel="stylesheet" href="{{ url_for('cwg.static', filename='dbus.css') }}?v=3.6">
+  <link rel="stylesheet" href="/api/bmc_template/static/profile_manager.css">
+  <link rel="stylesheet" href="/api/bmc_template/static/app_shell.css?v=3.8">
+</head>
+
+<body{% if shell_bar_ctx %} class="te-mode"{% endif %}>
+
+  {% include '_cwg_main.html' %}
+
+  <!-- Connect / Splash Page -->
+  <div id="connectPage"{% if shell_bar_ctx %} style="display:none;"{% endif %}>
+    {% if not shell_bar_ctx %}{% set cp_show_shutdown = true %}{% endif %}
+    {% set cp_error = '' %}
+    {% set cp_accent   = 'Command' %}
+    {% set cp_name     = 'WebGUI' %}
+    {% set cp_subtitle = 'OpenBMC 開發輔助' %}
+    {% set cp_form_tpl = '_cwg_form.html' %}
+    {% set cp_cards_id = 'cwgProfileCards' %}
+    {% include '_connect_page.html' %}
+  </div>
+
+  <script src="/api/bmc_template/static/conn_display.js"></script>
+  <script src="/api/bmc_template/static/connection_test.js?v=3.8"></script>
+  <script src="/api/bmc_template/static/profile_manager.js"></script>
+  <script src="/api/bmc_template/static/service.js"></script>
+  <script>
+    window.CWG_BASE = '{{ CWG_BASE | default("") }}';
+    window.BMC_SERVICE_NAME = {% if shell_bar_ctx %}'BMC ToolEntry 服務'{% else %}'CommandWebGUI 服務'{% endif %};
+    window.SERVICE_SHUTDOWN_URL = '/api/service/shutdown';
+    {% if hub_creds %}
+    window._HUB_CREDS = {{ hub_creds | tojson | safe }};
+    {% endif %}
+  </script>
+  <script src="{{ url_for('cwg.static', filename='dbus.js') }}?v=3.6"></script>
+  <script src="{{ url_for('cwg.static', filename='app.js') }}?v=3.10"></script>
+</body>
+</html>

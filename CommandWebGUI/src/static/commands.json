@@ -1,0 +1,929 @@
+{
+  "sections": [
+    {
+      "id": "sys-info",
+      "title": "系統基本資訊",
+      "icon": "🖥️",
+      "probe": null,
+      "dynamic": "os_info",
+      "always_show": true
+    },
+    {
+      "id": "filesystem",
+      "title": "檔案系統 / 記憶體",
+      "icon": "💽",
+      "probe": null,
+      "dynamic": "fs_info",
+      "always_show": true
+    },
+    {
+      "id": "network",
+      "title": "網路設定",
+      "icon": "🌐",
+      "probe": null,
+      "dynamic": "net_info",
+      "always_show": true,
+      "groups": [
+        {
+          "title": "常用網路指令",
+          "commands": [
+            {
+              "cmd": "ip addr",
+              "desc": "顯示所有介面 IP"
+            },
+            {
+              "cmd": "ip route",
+              "desc": "顯示路由表"
+            },
+            {
+              "cmd": "nslookup <host>",
+              "desc": "DNS 查詢"
+            },
+            {
+              "cmd": "ping -c 4 <host>",
+              "desc": "網路連通性測試"
+            },
+            {
+              "cmd": "nc -l -p <port>",
+              "desc": "啟動 TCP 監聽 (netcat)"
+            },
+            {
+              "cmd": "ss -tulnp",
+              "desc": "顯示所有監聽的 port"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sensors",
+      "title": "感測器 (Sensors)",
+      "icon": "🌡️",
+      "probe": "ipmitool",
+      "dynamic": "sensor_info",
+      "notes": [
+        {
+          "text": "感測器查詢指令請至下方 <strong>ipmitool</strong> → Sensor / SDR 區塊執行"
+        }
+      ]
+    },
+    {
+      "id": "obmcutil",
+      "title": "obmcutil — OpenBMC 狀態管理",
+      "icon": "⚙️",
+      "probe": "obmcutil",
+      "notes": [
+        {
+          "type": "syntax",
+          "text": "<code>obmcutil [--wait] [--verbose] [--id=&lt;INSTANCE_ID&gt;] &lt;command&gt;</code>"
+        }
+      ],
+      "groups": [
+        {
+          "title": null,
+          "commands": [
+            {
+              "cmd": "obmcutil state",
+              "desc": "顯示 BMC / Host / Chassis 完整狀態"
+            },
+            {
+              "cmd": "obmcutil bmcstate",
+              "desc": "顯示 BMC 自身狀態（Ready / NotReady）"
+            },
+            {
+              "cmd": "obmcutil chassisstate",
+              "desc": "顯示 Chassis 電源狀態"
+            },
+            {
+              "cmd": "obmcutil hoststate",
+              "desc": "顯示 Host 狀態"
+            },
+            {
+              "cmd": "obmcutil osstate",
+              "desc": "顯示 OS 啟動進度狀態"
+            },
+            {
+              "cmd": "obmcutil bootprogress",
+              "desc": "顯示 Host boot progress"
+            },
+            {
+              "cmd": "obmcutil status",
+              "desc": "簡短狀態摘要"
+            },
+            {
+              "cmd": "obmcutil power",
+              "desc": "顯示目前電源狀態"
+            },
+            {
+              "cmd": "obmcutil poweron",
+              "desc": "啟動 Host 電源",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil poweroff",
+              "desc": "關閉 Host 電源（Graceful）",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil chassison",
+              "desc": "啟動 Chassis 電源",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil chassisoff",
+              "desc": "關閉 Chassis 電源",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil chassiskill",
+              "desc": "強制關閉 Chassis 電源",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil hostrebooton",
+              "desc": "啟用 Host 在 Quiesce 狀態自動重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil hostrebootoff",
+              "desc": "停用 Host 在 Quiesce 狀態自動重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil bmcrebooton",
+              "desc": "啟用 BMC 自動重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil bmcrebootoff",
+              "desc": "停用 BMC 自動重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil recoveryon",
+              "desc": "啟用 watchdog timeout + host crash 恢復",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil recoveryoff",
+              "desc": "停用 watchdog timeout + host crash 恢復",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil recoverystatus",
+              "desc": "顯示 recovery 及 auto-reboot 設定狀態"
+            },
+            {
+              "cmd": "obmcutil listbootblock",
+              "desc": "列出啟動階段錯誤記錄"
+            },
+            {
+              "cmd": "obmcutil listlogs",
+              "desc": "列出所有 phosphor-logging 事件"
+            },
+            {
+              "cmd": "obmcutil showlog <log>",
+              "desc": "顯示特定 log 詳細內容"
+            },
+            {
+              "cmd": "obmcutil deletelogs",
+              "desc": "刪除所有 phosphor-logging 事件",
+              "dangerous": true
+            },
+            {
+              "cmd": "obmcutil stopofftargets",
+              "desc": "手動停止所有 obmc power-off targets",
+              "dangerous": true
+            }
+          ]
+        }
+      ],
+      "params_note": "<code>--wait / -w</code> → 等待狀態轉換完成才返回<br><code>--verbose / -v</code> → 搭配 --wait，將 journal 輸出到 stdout<br><code>--id=&lt;N&gt; / -i &lt;N&gt;</code> → 指定 instance ID（預設 0）<br><code>--force / -f</code> → 強制執行，忽略前置條件檢查"
+    },
+    {
+      "id": "ipmitool",
+      "title": "ipmitool — IPMI 管理",
+      "icon": "🔌",
+      "probe": "ipmitool",
+      "notes": [
+        {
+          "type": "info",
+          "text": "<strong>本地使用：</strong><code>ipmitool &lt;command&gt;</code><br><strong>遠端使用：</strong><code>ipmitool -H &lt;BMC_IP&gt; -U root -P '0penBmc' -I lanplus &lt;command&gt;</code><br><strong>從 Host 端：</strong><code>ssh root@localhost -p 2222</code> 登入後直接用 ipmitool"
+        }
+      ],
+      "groups": [
+        {
+          "title": "BMC / MC 管理",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool mc info",
+              "desc": "顯示 MC 基本資訊（Device ID, FW version, IPMI version）"
+            },
+            {
+              "cmd": "ipmitool mc getenables",
+              "desc": "顯示 MC 啟用功能"
+            },
+            {
+              "cmd": "ipmitool mc setenables <option> on|off",
+              "desc": "設定 MC 啟用功能"
+            },
+            {
+              "cmd": "ipmitool mc reset cold",
+              "desc": "Cold reset BMC",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool mc reset warm",
+              "desc": "Warm reset BMC",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool mc watchdog get",
+              "desc": "查詢 Watchdog 設定"
+            },
+            {
+              "cmd": "ipmitool mc watchdog reset",
+              "desc": "重置 Watchdog timer",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool mc watchdog off",
+              "desc": "停用 Watchdog",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool mc guid",
+              "desc": "顯示 MC GUID"
+            }
+          ]
+        },
+        {
+          "title": "Chassis / Power 控制",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool chassis status",
+              "desc": "顯示 Chassis 完整狀態"
+            },
+            {
+              "cmd": "ipmitool chassis power status",
+              "desc": "顯示目前電源 on/off"
+            },
+            {
+              "cmd": "ipmitool chassis power on",
+              "desc": "開機",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis power off",
+              "desc": "強制關機",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis power soft",
+              "desc": "Graceful 關機",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis power reset",
+              "desc": "硬重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis power cycle",
+              "desc": "Power cycle（off → on）",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis bootdev pxe",
+              "desc": "設定下次從 PXE 開機",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis bootdev disk",
+              "desc": "設定從硬碟開機",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis bootdev bios",
+              "desc": "設定進入 BIOS/UEFI",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool chassis bootparam get 5",
+              "desc": "查詢目前 Boot flag 設定"
+            }
+          ]
+        },
+        {
+          "title": "Sensor / SDR",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool sdr list",
+              "desc": "列出所有感測器"
+            },
+            {
+              "cmd": "ipmitool sdr type <type>",
+              "desc": "篩選特定類型 (Temperature / Voltage / Fan / Current)"
+            },
+            {
+              "cmd": "ipmitool sdr info",
+              "desc": "顯示 SDR repository 資訊"
+            },
+            {
+              "cmd": "ipmitool sensor list",
+              "desc": "列出感測器詳細數值清單"
+            },
+            {
+              "cmd": "ipmitool sensor get <name>",
+              "desc": "查詢特定感測器"
+            },
+            {
+              "cmd": "ipmitool sensor thresh <name> <threshold> <val>",
+              "desc": "設定閾值 (unr/ucr/unc/lnc/lcr/lnr)",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool raw 0x04 0x2D <sensor_num>",
+              "desc": "Raw 讀取感測器值",
+              "dangerous": true
+            }
+          ]
+        },
+        {
+          "title": "SEL (System Event Log)",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool sel list",
+              "desc": "列出所有 SEL 事件"
+            },
+            {
+              "cmd": "ipmitool sel info",
+              "desc": "顯示 SEL repository 資訊及剩餘空間"
+            },
+            {
+              "cmd": "ipmitool sel get <ID>",
+              "desc": "查詢特定事件詳細內容"
+            },
+            {
+              "cmd": "ipmitool sel clear",
+              "desc": "清除所有 SEL 事件",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool sel delete <ID>",
+              "desc": "刪除特定事件",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool sel elist",
+              "desc": "列出 SEL（含感測器名稱，較易讀）"
+            },
+            {
+              "cmd": "ipmitool sel time get",
+              "desc": "顯示 SEL 時間"
+            },
+            {
+              "cmd": "ipmitool sel time set <time>",
+              "desc": "設定 SEL 時間",
+              "dangerous": true
+            }
+          ]
+        },
+        {
+          "title": "LAN / 網路設定",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool lan print",
+              "desc": "顯示 LAN channel 設定（IP, MAC, Gateway）"
+            },
+            {
+              "cmd": "ipmitool lan print <channel>",
+              "desc": "指定 channel（通常 1）"
+            },
+            {
+              "cmd": "ipmitool lan set <ch> ipaddr <ip>",
+              "desc": "設定靜態 IP",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool lan set <ch> netmask <mask>",
+              "desc": "設定子網路遮罩",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool lan set <ch> defgw ipaddr <gw>",
+              "desc": "設定 Default Gateway",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool lan set <ch> ipsrc dhcp",
+              "desc": "切換為 DHCP",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool lan set <ch> ipsrc static",
+              "desc": "切換為靜態 IP",
+              "dangerous": true
+            }
+          ]
+        },
+        {
+          "title": "User 管理",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool user list",
+              "desc": "列出所有使用者"
+            },
+            {
+              "cmd": "ipmitool user list <channel>",
+              "desc": "列出特定 channel 使用者"
+            },
+            {
+              "cmd": "ipmitool user set name <id> <name>",
+              "desc": "設定使用者名稱",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool user set password <id> <pw>",
+              "desc": "設定密碼（最多 8 字元）",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool user enable <id>",
+              "desc": "啟用使用者",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool user disable <id>",
+              "desc": "停用使用者",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool user priv <id> <priv> <ch>",
+              "desc": "設定權限 (4=Admin, 3=Operator, 2=User)",
+              "dangerous": true
+            }
+          ]
+        },
+        {
+          "title": "FRU / Raw",
+          "collapsible": true,
+          "commands": [
+            {
+              "cmd": "ipmitool fru list",
+              "desc": "列出所有 FRU 裝置資訊"
+            },
+            {
+              "cmd": "ipmitool fru read <id> <file>",
+              "desc": "讀取 FRU 資料到檔案"
+            },
+            {
+              "cmd": "ipmitool fru write <id> <file>",
+              "desc": "寫入 FRU 資料",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool raw <netFn> <cmd> [data...]",
+              "desc": "發出 Raw IPMI 指令",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool raw 0x06 0x01",
+              "desc": "Get Device ID (raw 範例)",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool event <sensor> <event>",
+              "desc": "發出模擬 IPMI event",
+              "dangerous": true
+            },
+            {
+              "cmd": "ipmitool dcmi power reading",
+              "desc": "讀取 DCMI 功耗數據"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "services",
+      "title": "服務清單 (Running Services)",
+      "icon": "🗂️",
+      "probe": "systemctl",
+      "dynamic": "services_interactive"
+    },
+    {
+      "id": "systemctl",
+      "title": "systemctl / journalctl / timedatectl",
+      "icon": "🔄",
+      "probe": "systemctl",
+      "groups": [
+        {
+          "title": "systemctl",
+          "commands": [
+            {
+              "cmd": "systemctl list-units --type=service --state=running --no-pager",
+              "desc": "列出所有 running service"
+            },
+            {
+              "cmd": "systemctl list-units --type=service --state=failed --no-pager",
+              "desc": "列出失敗的 service"
+            },
+            {
+              "cmd": "systemctl status <service>",
+              "desc": "查詢 service 狀態"
+            },
+            {
+              "cmd": "systemctl start <service>",
+              "desc": "啟動 service",
+              "dangerous": true
+            },
+            {
+              "cmd": "systemctl stop <service>",
+              "desc": "停止 service",
+              "dangerous": true
+            },
+            {
+              "cmd": "systemctl restart <service>",
+              "desc": "重啟 service",
+              "dangerous": true
+            },
+            {
+              "cmd": "systemctl enable <service>",
+              "desc": "設為開機自動啟動",
+              "dangerous": true
+            },
+            {
+              "cmd": "systemctl disable <service>",
+              "desc": "取消開機自動啟動",
+              "dangerous": true
+            },
+            {
+              "cmd": "systemctl is-active <service>",
+              "desc": "確認是否 active"
+            },
+            {
+              "cmd": "systemctl list-dependencies <service>",
+              "desc": "顯示依賴關係"
+            },
+            {
+              "cmd": "systemctl daemon-reload",
+              "desc": "重新載入 unit 設定"
+            },
+            {
+              "cmd": "systemd-analyze blame",
+              "desc": "顯示各服務開機耗時"
+            },
+            {
+              "cmd": "systemd-analyze critical-chain",
+              "desc": "顯示開機關鍵路徑"
+            }
+          ]
+        },
+        {
+          "title": "journalctl",
+          "commands": [
+            {
+              "cmd": "journalctl -n 50 --no-pager",
+              "desc": "顯示最近 50 行"
+            },
+            {
+              "cmd": "journalctl -u <service> --no-pager -n 30",
+              "desc": "查詢特定 service log"
+            },
+            {
+              "cmd": "journalctl --since \"10 min ago\" --no-pager",
+              "desc": "查詢最近 10 分鐘 log"
+            },
+            {
+              "cmd": "journalctl -p err --no-pager",
+              "desc": "只顯示 error 等級以上"
+            }
+          ]
+        },
+        {
+          "title": "timedatectl",
+          "commands": [
+            {
+              "cmd": "timedatectl status",
+              "desc": "顯示時間及 NTP 狀態"
+            },
+            {
+              "cmd": "timedatectl set-ntp true",
+              "desc": "啟用 NTP 同步",
+              "dangerous": true
+            },
+            {
+              "cmd": "timedatectl set-time \"<YYYY-MM-DD HH:MM:SS>\"",
+              "desc": "手動設定時間",
+              "dangerous": true
+            },
+            {
+              "cmd": "timedatectl set-timezone <zone>",
+              "desc": "設定時區",
+              "dangerous": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phosphor",
+      "title": "Phosphor / OpenBMC 工具",
+      "icon": "🔧",
+      "probe": "phosphor-state-manager",
+      "groups": [
+        {
+          "title": null,
+          "headers": [
+            "工具",
+            "類型",
+            "說明"
+          ],
+          "commands": [
+            {
+              "cmd": "obmcutil",
+              "badge": "CLI",
+              "badge_type": "info",
+              "desc": "OpenBMC 狀態管理主工具"
+            },
+            {
+              "cmd": "obmc-console-client",
+              "badge": "CLI",
+              "badge_type": "info",
+              "desc": "連接 host serial console"
+            },
+            {
+              "cmd": "obmc-flash-bmc",
+              "badge": "危險",
+              "badge_type": "warn",
+              "desc": "BMC Firmware 更新工具"
+            },
+            {
+              "cmd": "phosphor-bmc-state-manager",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "BMC 狀態管理"
+            },
+            {
+              "cmd": "phosphor-certificate-manager",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "TLS 憑證管理"
+            },
+            {
+              "cmd": "phosphor-fan-monitor",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "風扇監控及 PID 控制"
+            },
+            {
+              "cmd": "phosphor-inventory",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "硬體庫存管理 (D-Bus)"
+            },
+            {
+              "cmd": "phosphor-log-manager",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "Phosphor 事件 log 管理"
+            },
+            {
+              "cmd": "phosphor-network-manager",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "網路設定管理"
+            },
+            {
+              "cmd": "phosphor-user-manager",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "使用者帳號管理"
+            },
+            {
+              "cmd": "phosphor-watchdog",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "BMC Watchdog timer"
+            },
+            {
+              "cmd": "bmcweb",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "Redfish / Web UI HTTP(S) server"
+            },
+            {
+              "cmd": "sel-logger",
+              "badge": "Service",
+              "badge_type": "purple",
+              "desc": "IPMI SEL 事件記錄"
+            }
+          ]
+        }
+      ],
+      "params_note": "<strong>D-Bus 工具（進階）</strong><br><code>busctl tree xyz.openbmc_project.&lt;service&gt;</code> → 查詢 D-Bus object 樹<br><code>busctl introspect xyz.openbmc_project.&lt;svc&gt; /xyz/openbmc_project/&lt;path&gt;</code> → 查詢 interface/method<br><code>busctl call &lt;service&gt; &lt;object&gt; &lt;interface&gt; &lt;method&gt; [sig] [args]</code> → 呼叫 D-Bus method"
+    },
+    {
+      "id": "busctl",
+      "title": "busctl — D-Bus 偵錯工具",
+      "icon": "🚌",
+      "probe": "busctl",
+      "notes": [
+        {
+          "type": "syntax",
+          "text": "<code>busctl [OPTIONS] COMMAND [SERVICE [OBJECT [INTERFACE ...]]]</code>"
+        }
+      ],
+      "groups": [
+        {
+          "title": "常用動態指令",
+          "commands": [
+            {
+              "cmd": "busctl tree <dbus_service>",
+              "desc": "顯示 D-Bus object tree"
+            },
+            {
+              "cmd": "busctl introspect <dbus_service> <path>",
+              "desc": "查詢介面方法 (請手動輸入路徑)"
+            }
+          ]
+        },
+        {
+          "title": "服務列舉 / Object Tree",
+          "commands": [
+            {
+              "cmd": "busctl list --acquired --no-pager",
+              "desc": "列出所有已取得 D-Bus name 的服務"
+            },
+            {
+              "cmd": "busctl list --activatable --no-pager",
+              "desc": "列出可自動啟動的 D-Bus 服務"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.State.BMC",
+              "desc": "BMC 狀態 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.State.Host",
+              "desc": "Host 狀態 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.State.Chassis",
+              "desc": "Chassis 電源狀態 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.Inventory.Manager",
+              "desc": "硬體庫存 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.Logging.Internal",
+              "desc": "Logging 服務 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.Network",
+              "desc": "網路管理 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.Software.BMC.Updater",
+              "desc": "BMC Firmware 更新 object tree"
+            },
+            {
+              "cmd": "busctl tree xyz.openbmc_project.User.Manager",
+              "desc": "使用者管理 object tree"
+            }
+          ]
+        },
+        {
+          "title": "Introspect / 屬性讀取",
+          "commands": [
+            {
+              "cmd": "busctl introspect xyz.openbmc_project.State.BMC /xyz/openbmc_project/state/bmc0",
+              "desc": "查 BMC state interface/method 清單"
+            },
+            {
+              "cmd": "busctl introspect xyz.openbmc_project.State.Host /xyz/openbmc_project/state/host0",
+              "desc": "查 Host state interface/method 清單"
+            },
+            {
+              "cmd": "busctl introspect xyz.openbmc_project.State.Chassis /xyz/openbmc_project/state/chassis0",
+              "desc": "查 Chassis state interface/method 清單"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.State.BMC /xyz/openbmc_project/state/bmc0 xyz.openbmc_project.State.BMC CurrentBMCState",
+              "desc": "讀取 BMC 目前狀態"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.State.Host /xyz/openbmc_project/state/host0 xyz.openbmc_project.State.Host CurrentHostState",
+              "desc": "讀取 Host 目前狀態"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.State.Chassis /xyz/openbmc_project/state/chassis0 xyz.openbmc_project.State.Chassis CurrentPowerState",
+              "desc": "讀取 Chassis 電源狀態"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.State.Host /xyz/openbmc_project/state/host0 xyz.openbmc_project.State.Host RequestedHostTransition",
+              "desc": "讀取 Host 請求的狀態轉換"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.State.BMC /xyz/openbmc_project/state/bmc0 xyz.openbmc_project.State.BMC RequestedBMCTransition",
+              "desc": "讀取 BMC 請求的狀態轉換"
+            },
+            {
+              "cmd": "busctl get-property xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory/system xyz.openbmc_project.Inventory.Item Present",
+              "desc": "查詢 system inventory 存在狀態"
+            },
+            {
+              "cmd": "busctl --json=pretty get-property <service> <object> <interface> <property>",
+              "desc": "以 JSON 格式讀取任意屬性"
+            }
+          ]
+        },
+        {
+          "title": "Set-Property / Method Call",
+          "commands": [
+            {
+              "cmd": "busctl set-property xyz.openbmc_project.State.Host /xyz/openbmc_project/state/host0 xyz.openbmc_project.State.Host RequestedHostTransition s xyz.openbmc_project.State.Host.Transition.On",
+              "desc": "請求 Host 開機",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl set-property xyz.openbmc_project.State.Host /xyz/openbmc_project/state/host0 xyz.openbmc_project.State.Host RequestedHostTransition s xyz.openbmc_project.State.Host.Transition.Off",
+              "desc": "請求 Host 關機 (Graceful)",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl set-property xyz.openbmc_project.State.Chassis /xyz/openbmc_project/state/chassis0 xyz.openbmc_project.State.Chassis RequestedPowerTransition s xyz.openbmc_project.State.Chassis.Transition.On",
+              "desc": "請求 Chassis 電源 On",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl set-property xyz.openbmc_project.State.Chassis /xyz/openbmc_project/state/chassis0 xyz.openbmc_project.State.Chassis RequestedPowerTransition s xyz.openbmc_project.State.Chassis.Transition.Off",
+              "desc": "請求 Chassis 電源 Off",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl set-property xyz.openbmc_project.State.BMC /xyz/openbmc_project/state/bmc0 xyz.openbmc_project.State.BMC RequestedBMCTransition s xyz.openbmc_project.State.BMC.Transition.Reboot",
+              "desc": "請求 BMC 重啟",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl call xyz.openbmc_project.Logging.Internal /xyz/openbmc_project/logging/internal/manager xyz.openbmc_project.Logging.Create.Internal Create ss <msg> <level>",
+              "desc": "手動建立 phosphor log 事件",
+              "dangerous": true
+            },
+            {
+              "cmd": "busctl call xyz.openbmc_project.Logging /xyz/openbmc_project/logging/entry/<id> xyz.openbmc_project.Object.Delete Delete",
+              "desc": "刪除特定 log 事件",
+              "dangerous": true
+            }
+          ]
+        },
+        {
+          "title": "Monitor / 事件監聽",
+          "commands": [
+            {
+              "cmd": "busctl monitor xyz.openbmc_project.State.Host",
+              "desc": "即時監聽 Host 狀態變更訊號"
+            },
+            {
+              "cmd": "busctl monitor xyz.openbmc_project.State.BMC",
+              "desc": "即時監聽 BMC 狀態變更訊號"
+            },
+            {
+              "cmd": "busctl monitor xyz.openbmc_project.Logging",
+              "desc": "即時監聽 Logging 事件"
+            },
+            {
+              "cmd": "busctl monitor --match \"type='signal',interface='xyz.openbmc_project.State.Host'\"",
+              "desc": "過濾特定 interface 的訊號"
+            },
+            {
+              "cmd": "busctl capture --no-pager | head -100",
+              "desc": "擷取 D-Bus 流量（前 100 行）"
+            }
+          ]
+        }
+      ],
+      "params_note": "<code>--no-pager</code> → 不分頁直接輸出<br><code>--json=short</code> / <code>--json=pretty</code> → JSON 格式<br><code>--verbose</code> → 顯示完整 type 資訊<br><code>--user</code> → 操作 user session bus（而非 system bus）"
+    },
+    {
+      "id": "busybox",
+      "title": "BusyBox 指令",
+      "icon": "🐚",
+      "probe": "busybox",
+      "dynamic": "busybox_chips",
+      "notes": [
+        {
+          "text": "點擊任一指令 → 底部面板展開，可修改參數後直接執行。以下列表由 BMC 上的 <code>busybox --list</code> 動態取得。"
+        }
+      ]
+    }
+  ]
+}

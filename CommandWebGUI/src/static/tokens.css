@@ -1,0 +1,39 @@
+/* BMC Tool Design Tokens
+   Source: E:\Claude\Module\tokens.css
+   Do not edit copies directly — update Module\ and sync via REGISTRY.md */
+
+:root {
+  /* Backgrounds */
+  --te-bg:      #0b1928;
+  --te-bg2:     #0f2035;
+  --te-bg3:     #172d45;
+  --te-surface: #131620;
+
+  /* Borders */
+  --te-border:   #1e3a55;
+  --te-border-2: #2a2f4a;
+
+  /* Text */
+  --te-text:     #d0e8ff;
+  --te-text-dim: #6a8fab;
+  --te-text-mut: #3d4568;
+
+  /* Accent */
+  --te-accent:     #4fc3f7;
+  --te-accent-dim: rgba(79, 195, 247, 0.12);
+  --te-accent-glo: rgba(79, 195, 247, 0.28);
+
+  /* Semantic */
+  --te-green:  #4ade80;
+  --te-red:    #f87171;
+  --te-yellow: #facc15;
+  --te-orange: #fb923c;
+
+  /* Layout */
+  --te-radius:    8px;
+  --te-radius-sm: 5px;
+
+  /* Typography */
+  --te-font:      Inter, system-ui, sans-serif;
+  --te-font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}

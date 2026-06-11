@@ -10,28 +10,7 @@ OpenBMC 韌體開發輔助工具 — 指令面板、終端機、D-Bus 分析
 
 ### 首頁 — 連線設定與已儲存連線
 
-![首頁](docs/screenshot_welcome.png)
-
-### SSH / COM Port 設定
-
-![SSH](docs/screenshot_connbar_ssh.png)
-![COM](docs/screenshot_connbar_com.png)
-
-### 主畫面 — 指令面板
-
-![主畫面](docs/screenshot_main_viewport.png)
-
-### 服務管理面板 — Running Services 一覽
-
-![服務管理](docs/screenshot_services.png)
-
-### D-Bus 分析面板 — 服務樹 / 屬性 / Signal / Snapshot
-
-![D-Bus 分析面板佈局](docs/dbus-verify-panel.png)
-
-### icon工具圖示
-
-![icon](docs/screenshot_icon.png)
+![首頁](docs/screenshot_main.png)
 
 ---
 
@@ -58,7 +37,7 @@ OpenBMC 韌體開發輔助工具 — 指令面板、終端機、D-Bus 分析
 
 ## 環境需求
 
-- Python 3.9+
+- Python 3.10+
 
 ```
 flask>=3.0
@@ -80,8 +59,10 @@ pip install -r requirements.txt
 ## 快速啟動
 
 ```bash
-python main.py
+python src/main.py
 ```
+
+或執行 `packaging/dist/CommandWebGUI.exe`（無需安裝 Python）。
 
 伺服器自動選取閒置 port 並開啟瀏覽器，網址會印在終端機：
 
@@ -161,7 +142,7 @@ WEBGUI_USER=admin WEBGUI_PASS=secret python main.py
 
 ## 自訂指令表
 
-指令定義在 `static/commands.json`：
+指令定義在 `src/static/commands.json`：
 
 ```json
 {
@@ -196,16 +177,22 @@ pip install pyinstaller
 使用專案內建的 `.spec`（推薦）：
 
 ```bash
-pyinstaller CommandWebGUI.spec
+pyinstaller packaging/CommandWebGUI.spec --distpath packaging/dist --workpath packaging/build
 ```
 
 或手動指定（Windows）：
 
 ```
-pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "templates;templates" --add-data "static;static" --hidden-import "pystray._win32" --hidden-import "PIL._imagingtk" main.py
+pyinstaller --onefile --noconsole --name CommandWebGUI --add-data "src/templates;templates" --add-data "src/static;static" --hidden-import "pystray._win32" --hidden-import "PIL._imagingtk" src/main.py
 ```
 
-產生的 `dist/CommandWebGUI.exe` 可直接發佈，`profiles.db` 與 `commandwebgui.lock` 會在同目錄自動建立。
+產生的 `packaging/dist/CommandWebGUI.exe` 可直接發佈，`commandwebgui.lock` 會建立於 EXE 同目錄。
+
+> **連線設定檔路徑（EXE 模式）**：可透過環境變數指定 `profiles.db` 存放位置：
+> ```powershell
+> $env:PROFILE_DB = "C:\MyTools\profiles.db"
+> .\CommandWebGUI.exe
+> ```
 
 ---
 

@@ -1,0 +1,183 @@
+{# CWG — ToolEntry: 公版 bt-shell-bar；standalone 連線後由 conn-bar.connected 擔任單一頂列 #}
+{% if shell_bar_ctx %}
+{% include '_inner_header.html' %}
+{% endif %}
+
+<!-- Connection bar（未連線可編輯；standalone 連線後 = 唯一頂列；ToolEntry 連線後隱藏） -->
+<div class="conn-bar" id="connBar" style="display:none;">
+  <span class="bt-tool-name conn-bar-tool-name">{{ tool_display_name('cwg') | safe }}</span>
+  <div class="conn-fields" id="connFields">
+    <div class="conn-fields-edit" id="connFieldsEdit">
+      <div class="conn-type-toggle">
+        <button id="typeBtnSsh" class="type-btn active" onclick="setConnType('ssh')">SSH</button>
+        <button id="typeBtnSerial" class="type-btn" onclick="setConnType('serial')">COM</button>
+      </div>
+      <label>
+        <span id="lblConnHost">Host</span>
+        <select id="cfgSerialSel" class="serial-sel" style="display:none;" title="偵測到的 COM Port"
+          onchange="serialSelChange(this)">
+          <option value="">-- COM Port --</option>
+        </select>
+        <input id="cfgHost" type="text" placeholder="BMC IP" autocomplete="off" spellcheck="false"
+          ondblclick="if(_connType==='serial') fetchSerialPorts();">
+      </label>
+      <label>
+        <span id="lblConnPort">Port</span>
+        <input id="cfgPort" type="number" placeholder="22">
+        <select id="cfgBaudSel" class="serial-sel" style="display:none;" title="Baud Rate"
+          onchange="el('cfgPort').value=this.value">
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="38400">38400</option>
+          <option value="57600">57600</option>
+          <option value="115200" selected>115200</option>
+          <option value="230400">230400</option>
+          <option value="460800">460800</option>
+        </select>
+      </label>
+      <label>User <input id="cfgUser" type="text" placeholder="root" autocomplete="off" spellcheck="false"></label>
+      <label>Password <input id="cfgPass" type="password" autocomplete="new-password"></label>
+    </div>
+    <div class="bt-conn-chip" id="connFieldsSummary" hidden>
+      <span class="bt-dot ok" aria-hidden="true"></span>
+      <span class="bt-conn-badge" id="connSummaryType"></span>
+      <span class="bt-conn-host" id="connSummaryHost"></span>
+    </div>
+  </div>
+  <div class="bmc-info-badges" id="bmcInfoBadges" style="display:none;">
+    <span class="bmc-badge" id="bmcOsBadge"></span>
+    <span class="bmc-badge" id="bmcMachineBadge"></span>
+  </div>
+  <div class="conn-actions">
+    <span id="connDot" class="conn-dot grey"></span>
+    <span id="connTxt" class="conn-status-text">未連線</span>
+    <button id="connectBtn" onclick="connectBMC()">連線</button>
+    <button id="btnHome" onclick="goHome()">首頁</button>
+    <button type="button" id="btnShutdown" class="shutdown-btn" onclick="shutdownApp()" title="結束背景服務與系統匣">✕ 結束服務</button>
+  </div>
+</div>
+
+<!-- Main Content Panel -->
+<div id="mainContent"
+  style="{% if shell_bar_ctx %}display:flex;{% else %}display:none;{% endif %} flex:1; flex-direction:column; min-height:0; overflow:hidden;">
+
+  <nav class="bt-app-nav" id="cwgAppNav" style="display:none;">
+    <a href="#" id="navCmd" data-tab="cmd">Command</a>
+    <a href="#" id="navDbus" data-tab="dbus">D-Bus</a>
+  </nav>
+
+  <div id="appCmdView" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 搜尋指令..." oninput="filterAll(this.value)">
+      <span class="search-counter" id="searchCounter" style="display:none;"></span>
+      <div class="search-actions">
+        <button class="history-open-btn" onclick="openHistorySidebar()" title="命令歷史">📜 歷史</button>
+        <button class="history-open-btn"
+          onclick="el('chipPanel').classList.add('show'); el('chipInput').focus();"
+          title="開啟指令執行面板">⚡ 終端機</button>
+      </div>
+    </div>
+    <div class="container">
+      <nav class="nav" id="navPanel"></nav>
+      <div class="content" id="commandSections">
+        <div class="discover-loading">
+          <div class="discover-icon">🔍</div>
+          正在探測 BMC 可用工具...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dbus-app-container" style="display:none; flex:1; flex-direction:column; overflow:hidden; min-height:0;">
+    <div class="search-bar" style="flex-shrink:0; border-bottom:1px solid var(--border);">
+      <input id="dbusSearch" type="text" placeholder="🔍 搜尋Services..." autocomplete="off" style="max-width:300px;">
+      <div class="search-actions">
+        <button id="btn-snapshot" class="history-open-btn" title="Download Snapshot">Snapshot</button>
+        <button id="btn-diff" class="history-open-btn" title="Compare Snapshot">Diff</button>
+      </div>
+    </div>
+    <div id="app" style="display:flex; flex:1; overflow:hidden;">
+      <aside id="sidebar"><div id="tree"></div></aside>
+      <div id="divider"></div>
+      <section id="detail">
+        <div id="detail-content">
+          <div id="detail-placeholder">Select a service on the left, then click an object path.</div>
+        </div>
+        <div id="sig-panel">
+          <div id="sig-bar">
+            <button id="tab-sig" class="tab active">SIGNALS</button>
+            <button id="tab-jnl" class="tab">JOURNAL</button>
+            <span id="sig-controls">
+              <select id="sig-filter"><option value="">All paths</option></select>
+              <input id="sig-payload" type="text" placeholder="Payload regex">
+              <button id="sig-clear" title="Clear all signals in the list">Clear List</button>
+            </span>
+            <span id="jnl-controls" style="display:none; gap:8px; margin-left:auto; align-items:center;">
+              <button id="jnl-clear" title="Clear all logs in the journal">Clear Journal</button>
+            </span>
+          </div>
+          <div id="sig-list"></div>
+          <div id="jnl-list" style="display:none; overflow-y:auto; flex:1; font-size:11px;"></div>
+        </div>
+      </section>
+    </div>
+    <div id="diff-modal" class="modal-overlay hidden">
+      <div class="modal-box" style="width:80%; height:80%; display:flex; flex-direction:column;">
+        <div class="modal-title">Compare Snapshot</div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <input type="file" id="diff-file" accept=".json">
+          <span style="font-size:12px;color:#888;">Select a previously downloaded snapshot JSON.</span>
+        </div>
+        <div id="diff-result"
+          style="flex:1; overflow:auto; background:#1e1e1e; padding:10px; border:1px solid #444; font-size:12px; white-space:pre-wrap;"></div>
+        <div class="modal-actions"><button id="d-close">Close</button></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Warning Modal (body-level overlay) -->
+<div id="warnModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)cancelWarn()">
+  <div class="warn-box" id="warnBox">
+    <div class="warn-icon" id="warnIcon">⚠️</div>
+    <div class="warn-title">確認執行危險指令</div>
+    <div class="warn-reason" id="warnReasonText"></div>
+    <div class="warn-cmd-box" id="warnCmdText"></div>
+    <div class="warn-actions">
+      <button class="warn-btn cancel" onclick="cancelWarn()">取消</button>
+      <button class="warn-btn" id="warnConfirmBtn" onclick="confirmWarn()">確認執行</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chip Run Panel (body-level overlay) -->
+<div class="chip-panel" id="chipPanel">
+  <div class="chip-panel-hdr">
+    <span class="chip-panel-title">⚡ 指令執行面板</span>
+    <div class="chip-panel-actions">
+      <button class="chip-action-btn" id="copyOutputBtn" onclick="copyChipOutput()" title="複製輸出">📋 複製</button>
+      <button class="chip-action-btn" onclick="clearChipOutput()" title="清除輸出">🗑 清除</button>
+      <button class="chip-close" onclick="closeChipPanel()">✕</button>
+    </div>
+  </div>
+  <div class="chip-input-row">
+    <span class="prompt-sign">$</span>
+    <input type="text" id="chipInput" autocomplete="off" spellcheck="false" placeholder="輸入指令，↑↓ 瀏覽歷史">
+    <button id="chipRunBtn" onclick="runChipCmd()">執行</button>
+  </div>
+  <pre class="chip-output-pre" id="chipOutput"></pre>
+</div>
+
+<!-- History Sidebar (body-level overlay) -->
+<div class="history-overlay" id="historyOverlay" onclick="closeHistorySidebar()"></div>
+<div class="history-sidebar" id="historySidebar">
+  <div class="history-hdr">
+    <span class="history-title">📜 命令歷史</span>
+    <button class="chip-close" onclick="closeHistorySidebar()">✕</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+  <div class="history-footer">
+    <button onclick="clearHistory()">🗑 清除歷史</button>
+  </div>
+</div>

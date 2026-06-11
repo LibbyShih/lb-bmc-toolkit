@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block tool_title %}Shared Tool{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/api/bmc_template/static/profile_manager.css">
+  {% block head %}{% endblock %}
+</head>
+
+<body{% if shell_bar_ctx %} class="te-mode" {% endif %}>
+  {% if shell_bar_ctx %}{% include '_inner_header.html' %}{% endif %}
+
+  <!-- Main Tool Interface -->
+  {% block tool_main %}{% endblock %}
+
+  <!-- Connect Page — unified template -->
+  <div id="connectPage" {% if shell_bar_ctx %}style="display:none;"{% endif %}>
+    <div class="sp-connect-page-root">
+      <div class="sp-connect-wrap">
+        <header class="sp-connect-header">
+          <div class="sp-connect-logo">{% block tool_logo %}<span class="sp-logo-accent">Tool</span>Name{% endblock %}</div>
+          <div class="sp-connect-subtitle">{% block tool_subtitle %}Tool Subtitle{% endblock %}</div>
+        </header>
+
+        <div class="sp-main-row">
+          <div class="sp-connect-card">
+            {% block connect_form %}
+            <!-- Connect Form Goes Here -->
+            {% endblock %}
+          </div>
+
+          <aside class="sp-connect-profiles">
+            <div class="sp-profiles-header">
+              <span>Saved Profiles</span>
+              <div class="sp-profiles-actions">
+                <button type="button" onclick="pm.cmdOpenDb()">📂 Open</button>
+                <button type="button" onclick="pm.cmdSaveAsDb()">💾 Save</button>
+              </div>
+            </div>
+            <div class="profile-cards" id="{{ profile_cards_id | default('profileCards') }}"></div>
+          </aside>
+        </div>
+
+        {% block tool_description %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <style>body { padding-bottom: 46px; }</style>
+  <div id="{{ bottom_bar_id | default('bottomBar') }}" style="position:fixed; bottom:0; left:0; right:0; z-index:100;"></div>
+
+  <script src="/api/bmc_template/static/profile_manager.js"></script>
+  {% block tool_scripts %}{% endblock %}
+</body>
+</html>

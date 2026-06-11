@@ -1,0 +1,73 @@
+{# CWG connect form — SSH / COM Port toggle #}
+<div class="sp-conn-toggle">
+  <button id="cpBtnSsh" class="active" onclick="cpSetType('ssh')">SSH</button>
+  <button id="cpBtnSerial" onclick="cpSetType('serial')">COM Port</button>
+</div>
+
+<div id="cpSshFields">
+  <div class="sp-form-group">
+    <label>BMC IP / Hostname</label>
+    <input id="cpHost" type="text" placeholder="192.168.1.100" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>SSH Port</label>
+      <input id="cpSshPort" type="number" placeholder="22" value="22">
+    </div>
+    <div class="sp-form-group">
+      <label>IPMI Port</label>
+      <input id="cpIpmiPort" type="number" placeholder="623" value="623">
+    </div>
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>Username</label>
+      <input id="cpUser" type="text" placeholder="root" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="sp-form-group">
+      <label>Password</label>
+      <input id="cpPass" type="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+  </div>
+</div>
+
+<div id="cpSerialFields" style="display:none;">
+  <div class="sp-form-group">
+    <label>COM Port</label>
+    <input id="cpComPort" type="text" placeholder="COM3 或 /dev/ttyUSB0" autocomplete="off">
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>Baud Rate</label>
+      <select id="cpBaud">
+        <option value="9600">9600</option>
+        <option value="19200">19200</option>
+        <option value="38400">38400</option>
+        <option value="57600">57600</option>
+        <option value="115200" selected>115200</option>
+        <option value="230400">230400</option>
+        <option value="460800">460800</option>
+      </select>
+    </div>
+    <div class="sp-form-group">
+      <label>IPMI Port</label>
+      <input id="cpIpmiPortSerial" type="number" placeholder="623" value="623">
+    </div>
+  </div>
+  <div class="sp-form-row">
+    <div class="sp-form-group">
+      <label>Username</label>
+      <input id="cpUserSerial" type="text" placeholder="root" autocomplete="off">
+    </div>
+    <div class="sp-form-group">
+      <label>Password</label>
+      <input id="cpPassSerial" type="password" placeholder="••••••••">
+    </div>
+  </div>
+</div>
+
+{% include '_connect_save_row.html' %}
+<div class="sp-form-actions-row">
+  <button type="button" class="sp-btn sp-btn-secondary" id="spSaveNewProfileBtn">儲存 Profile</button>
+  <button type="button" class="sp-connect-btn" id="cpConnectBtn" onclick="cpConnect()">Connect</button>
+</div>

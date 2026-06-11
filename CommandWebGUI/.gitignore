@@ -1,0 +1,14 @@
+packaging/build/
+packaging/dist/*
+!packaging/dist/*.exe
+scripts/
+worklog.md
+
+__pycache__/
+*.pyc
+*.pyo
+*.lock
+*.db
+.env
+.pytest_cache/
+pytest-cache-*/
