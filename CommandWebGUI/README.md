@@ -79,6 +79,29 @@ pip install -r requirements.txt
 
 ## 快速啟動
 
+### 使用 Python venv（建議）
+
+```bash
+# 建立虛擬環境
+python3 -m venv .venv
+
+# 啟動虛擬環境
+# Linux / macOS
+source .venv/bin/activate
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# 安裝相依套件
+pip install -r requirements.txt
+
+# 啟動應用程式
+python main.py
+```
+
+> WSL2 / Linux 無桌面環境時，`pystray` 無法初始化 X display 屬正常現象，系統匣功能會自動停用，其他功能不受影響。
+
+### 直接啟動
+
 ```bash
 python main.py
 ```

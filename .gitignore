@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Runtime files
+commandwebgui.lock
+*.lock
+
+# Database (runtime data)
+profiles.db
+
+# PyInstaller output
+dist/
+build/
+*.spec.bak
+
+# OS
+.DS_Store
+Thumbs.db

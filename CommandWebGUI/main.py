@@ -28,7 +28,7 @@ try:
     import pystray
     from PIL import Image, ImageDraw
     HAS_TRAY = True
-except ImportError:
+except Exception:
     HAS_TRAY = False
 
 # ── PyInstaller frozen path ──────────────────────────────────────
